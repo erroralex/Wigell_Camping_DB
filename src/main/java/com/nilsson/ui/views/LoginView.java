@@ -1,5 +1,6 @@
 package com.nilsson.ui.views;
 
+import com.nilsson.service.AuthService;
 import com.nilsson.util.UserSession;
 import com.nilsson.ui.CustomTitleBar;
 import com.nilsson.ui.RootLayout;
@@ -28,9 +29,11 @@ import org.kordamp.ikonli.javafx.FontIcon;
 public class LoginView extends VBox {
 
     private final Stage primaryStage;
+    private final AuthService authService;
 
-    public LoginView(Stage primaryStage, RootLayout rootLayout) {
+    public LoginView(Stage primaryStage, RootLayout rootLayout, AuthService authService) {
         this.primaryStage = primaryStage;
+        this.authService = authService;
 
         // Layout Setup for centered content
         VBox contentVBox = new VBox();
@@ -131,34 +134,25 @@ public class LoginView extends VBox {
             String username = usernameField.getText().trim();
             String password = passwordField.getText();
 
-            // Check if password matches the required "0000"
-            if ("0000".equals(password)) {
+            // Validate using AuthService
+            if (authService.login(username, password)) {
 
-                // Set Username, use "Guest" if username is empty
+                // Login successful - Proceed with Session and UI swap
                 UserSession.login(username.isEmpty() ? "Guest" : username);
 
                 if (rootLayout != null) {
-
-                    // Refresh SideNavigation
                     rootLayout.refreshSideNavigation();
 
                     CustomTitleBar sharedTitleBar = UserSession.getInitializedTitleBar();
-
-                    // Ensure the shared title bar is the top of the RootLayout
                     if (rootLayout.getTop() == null && sharedTitleBar != null) {
                         rootLayout.setTop(sharedTitleBar);
                     }
 
-                    // Swap the scene root
                     primaryStage.getScene().setRoot(rootLayout);
-
-                    // Update title
                     primaryStage.setTitle("Wigell Camping - Home");
                 }
             } else {
-                // Alert for incorrect password
-                UIUtil.showErrorAlert("Login Failed",null, "Incorrect password. Please use '0000'."
-                );
+                UIUtil.showErrorAlert("Login Failed", null, "Incorrect password. Please use '0000'.");
             }
         });
     }

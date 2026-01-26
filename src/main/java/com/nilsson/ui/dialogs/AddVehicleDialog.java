@@ -1,5 +1,6 @@
 package com.nilsson.ui.dialogs;
 
+import com.nilsson.entity.Vehicle;
 import com.nilsson.util.LanguageManager;
 import com.nilsson.ui.UIUtil;
 import javafx.application.Platform;
@@ -7,7 +8,9 @@ import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 
-public class AddVehicleDialog extends Dialog<RecreationalVehicle> {
+import java.math.BigDecimal;
+
+public class AddVehicleDialog extends Dialog<Vehicle> {
 
     private final TextField makeField = new TextField();
     private final TextField modelField = new TextField();
@@ -86,27 +89,32 @@ public class AddVehicleDialog extends Dialog<RecreationalVehicle> {
 
         setResultConverter(dialogButton -> {
             if (dialogButton == addButtonType) {
-
-                // New ID.
-                return new RecreationalVehicle(
-                        0,
-                        makeField.getText().trim(),
-                        modelField.getText().trim(),
-                        typeBox.getValue(),
-                        Double.parseDouble(priceField.getText().trim()),
-                        yearField.getText().trim(),
-                        capacityField.getText().trim()
-                );
+                try {
+                    return new Vehicle(
+                            makeField.getText().trim(),
+                            modelField.getText().trim(),
+                            yearField.getText().trim(),
+                            typeBox.getValue(),
+                            capacityField.getText().trim(),
+                            new BigDecimal(priceField.getText().trim()),
+                            false
+                    );
+                } catch (NumberFormatException e) {
+                    // Simple error handling for now
+                    System.err.println("Invalid price format");
+                    return null;
+                }
             }
             return null;
         });
     }
 
+
     private GridPane createGridPane() {
         GridPane grid = new GridPane();
         grid.setHgap(15);
         grid.setVgap(20);
-        grid.setPadding(new Insets(20,20,10,10));
+        grid.setPadding(new Insets(20, 20, 10, 10));
         return grid;
     }
 }

@@ -10,7 +10,6 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
-
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Optional;

@@ -1,9 +1,12 @@
 package com.nilsson.ui.views;
 
+import com.nilsson.entity.Vehicle;
+import com.nilsson.ui.dialogs.AddVehicleDialog;
+import com.nilsson.ui.dialogs.EditVehicleDialog;
 import com.nilsson.util.LanguageManager;
-import com.nilsson.registries.Inventory;
 import com.nilsson.service.InventoryService;
 import com.nilsson.ui.UIUtil;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -17,23 +20,24 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import org.kordamp.ikonli.fontawesome.FontAwesome;
 import org.kordamp.ikonli.javafx.FontIcon;
-
-import java.util.List;
+import java.util.Optional;
 
 public class VehicleView extends VBox {
 
-    private final TableView<RecreationalVehicle> recreationalVehicleTable = new TableView<>();
-    private final ObservableList<RecreationalVehicle> masterData = FXCollections.observableArrayList();
-    private final InventoryService inventoryService = new InventoryService();
+    private final TableView<Vehicle> vehicleTable = new TableView<>();
+    private final ObservableList<Vehicle> masterVehicleData = FXCollections.observableArrayList();
+    private final InventoryService inventoryService;
     private final TextField searchField = new TextField();
-    private FilteredList<RecreationalVehicle> filteredData;
+    private FilteredList<Vehicle> filteredData;
 
-    public VehicleView() {
+    public VehicleView(InventoryService inventoryService) {
+        this.inventoryService = inventoryService;
+
         this.getStyleClass().add("content-view");
         this.setSpacing(20);
         this.setPadding(new Insets(20));
         this.setAlignment(Pos.TOP_LEFT);
-        VBox.setVgrow(recreationalVehicleTable, Priority.ALWAYS);
+        VBox.setVgrow(vehicleTable, Priority.ALWAYS);
 
         Label title = new Label(LanguageManager.getInstance().getString("txt.availableVehicles"));
         title.getStyleClass().add("content-title");
@@ -46,32 +50,37 @@ public class VehicleView extends VBox {
 
         HBox buttonBar = createButtonBar();
 
-        this.getChildren().addAll(title, buttonBar, searchField, recreationalVehicleTable);
+        this.getChildren().addAll(title, buttonBar, searchField, vehicleTable);
     }
 
     private void initializeTable() {
-        recreationalVehicleTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        vehicleTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
-        TableColumn<RecreationalVehicle, String> makeCol = new TableColumn<>(LanguageManager.getInstance().getString("table.make"));
+        TableColumn<Vehicle, String> makeCol = new TableColumn<>(LanguageManager.getInstance().getString("table.make"));
         makeCol.setCellValueFactory(new PropertyValueFactory<>("make"));
 
-        TableColumn<RecreationalVehicle, String> modelCol = new TableColumn<>(LanguageManager.getInstance().getString("table.model"));
+        TableColumn<Vehicle, String> modelCol = new TableColumn<>(LanguageManager.getInstance().getString("table.model"));
         modelCol.setCellValueFactory(new PropertyValueFactory<>("model"));
 
-        TableColumn<RecreationalVehicle, String> typeCol = new TableColumn<>(LanguageManager.getInstance().getString("table.type"));
+        TableColumn<Vehicle, String> typeCol = new TableColumn<>(LanguageManager.getInstance().getString("table.type"));
         typeCol.setCellValueFactory(new PropertyValueFactory<>("type"));
 
-        TableColumn<RecreationalVehicle, String> yearCol = new TableColumn<>(LanguageManager.getInstance().getString("table.year"));
+        TableColumn<Vehicle, String> yearCol = new TableColumn<>(LanguageManager.getInstance().getString("table.year"));
         yearCol.setCellValueFactory(new PropertyValueFactory<>("year"));
 
-        TableColumn<RecreationalVehicle, String> capacityCol = new TableColumn<>(LanguageManager.getInstance().getString("table.capacity"));
+        TableColumn<Vehicle, String> capacityCol = new TableColumn<>(LanguageManager.getInstance().getString("table.capacity"));
         capacityCol.setCellValueFactory(new PropertyValueFactory<>("capacity"));
 
-        TableColumn<RecreationalVehicle, Double> priceCol = new TableColumn<>(LanguageManager.getInstance().getString("table.dailyPrice"));
-        priceCol.setCellValueFactory(new PropertyValueFactory<>("dailyPrice"));
+        TableColumn<Vehicle, String> priceCol = new TableColumn<>(LanguageManager.getInstance().getString("table.dailyPrice"));
+        priceCol.setCellValueFactory(cellData -> {
+            if (cellData.getValue().getCost() != null) {
+                return new SimpleStringProperty(cellData.getValue().getCost().toString() + " SEK");
+            }
+            return new SimpleStringProperty("");
+        });
 
-        TableColumn<RecreationalVehicle, Boolean> rentedCol = new TableColumn<>(LanguageManager.getInstance().getString("table.status"));
-        rentedCol.setCellValueFactory(new PropertyValueFactory<>("rented"));
+        TableColumn<Vehicle, Boolean> rentedCol = new TableColumn<>(LanguageManager.getInstance().getString("table.status"));
+        rentedCol.setCellValueFactory(cell -> new javafx.beans.property.SimpleBooleanProperty(cell.getValue().isRented()));
         rentedCol.setCellFactory(column -> new TableCell<>() {
             @Override
             protected void updateItem(Boolean isRented, boolean empty) {
@@ -85,16 +94,16 @@ public class VehicleView extends VBox {
                         setStyle("-fx-text-fill: #8B0000; -fx-font-weight: bold;");
                     } else {
                         setText(LanguageManager.getInstance().getString("status.available"));
-                        setStyle("-fx-text-fill: #008B00;");
+                        setStyle("-fx-text-fill: #e69d67;");
                     }
                 }
             }
         });
 
-        recreationalVehicleTable.getColumns().addAll(makeCol, modelCol, typeCol, yearCol, capacityCol, priceCol, rentedCol);
-        recreationalVehicleTable.setItems(masterData);
+        vehicleTable.getColumns().addAll(makeCol, modelCol, typeCol, yearCol, capacityCol, priceCol, rentedCol);
+        vehicleTable.setItems(masterVehicleData);
 
-        filteredData = new FilteredList<>(masterData, p -> true);
+        filteredData = new FilteredList<>(masterVehicleData, p -> true);
         searchField.textProperty().addListener((observable, oldValue, newValue) -> {
             filteredData.setPredicate(vehicle -> {
                 if (newValue == null || newValue.isEmpty()) return true;
@@ -105,59 +114,61 @@ public class VehicleView extends VBox {
                         vehicle.getYear().contains(lowerCaseFilter);
             });
         });
-        SortedList<RecreationalVehicle> sortedData = new SortedList<>(filteredData);
-        sortedData.comparatorProperty().bind(recreationalVehicleTable.comparatorProperty());
-        recreationalVehicleTable.setItems(sortedData);
+        SortedList<Vehicle> sortedData = new SortedList<>(filteredData);
+        sortedData.comparatorProperty().bind(vehicleTable.comparatorProperty());
+        vehicleTable.setItems(sortedData);
     }
 
     private void loadMasterData() {
-        // Calls Inventory -> DAO directly, always fresh
-        List<RecreationalVehicle> list = Inventory.getInstance().getRecreationalVehicleList();
-        masterData.setAll(list);
+        masterVehicleData.setAll(inventoryService.getAllVehicles());
     }
 
     public void refreshData() {
-        // REMOVED: Inventory.getInstance().refreshInventory();
         loadMasterData();
     }
 
     private void handleAdd() {
-        RecreationalVehicle newRV = inventoryService.handleAddRecreationalVehicle();
-        if(newRV != null) refreshData();
+        AddVehicleDialog dialog = new AddVehicleDialog();
+        Optional<Vehicle> result = dialog.showAndWait();
+        if (result.isPresent()) {
+            Vehicle newVehicle = result.get();
+            inventoryService.addVehicle(newVehicle);
+            loadMasterData();
+            UIUtil.showInfoAlert(LanguageManager.getInstance().getString("msg.success"), null, "Vehicle added successfully.");
+        }
     }
 
     private void handleEdit() {
-        RecreationalVehicle selected = recreationalVehicleTable.getSelectionModel().getSelectedItem();
-        if (selected != null) {
-            inventoryService.handleEditRecreationalVehicle(selected);
-            recreationalVehicleTable.refresh();
-        } else {
-            showSelectionError();
-        }
-    }
-
-    private void handleRemove() {
-        RecreationalVehicle selected = recreationalVehicleTable.getSelectionModel().getSelectedItem();
-        if (selected != null) {
-            if (UIUtil.showConfirmationAlert(
-                    LanguageManager.getInstance().getString("confirm.removal"),
-                    LanguageManager.getInstance().getString("confirm.confirm"),
-                    LanguageManager.getInstance().getString("confirm.selected") + " " + selected.getMake())) {
-
-                if (inventoryService.handleRemoveRecreationalVehicle(selected)) {
-                    masterData.remove(selected);
-                }
+        Vehicle selectedVehicle = vehicleTable.getSelectionModel().getSelectedItem();
+        if (selectedVehicle != null) {
+            EditVehicleDialog dialog = new EditVehicleDialog(selectedVehicle);
+            Optional<Vehicle> result = dialog.showAndWait();
+            if (result.isPresent()) {
+                inventoryService.updateVehicle(result.get());
+                loadMasterData();
             }
         } else {
-            showSelectionError();
+            showSelectionError("error.pleaseSelectEditItem");
         }
     }
 
-    private void showSelectionError() {
+    private void handleRemoveVehicle() {
+        Vehicle selectedVehicle = vehicleTable.getSelectionModel().getSelectedItem();
+        if (selectedVehicle != null) {
+            if (UIUtil.showConfirmationAlert(LanguageManager.getInstance().getString("confirm.removal"), null, "Delete " + selectedVehicle.getModel() + "?")) {
+                inventoryService.deleteVehicle(selectedVehicle);
+                masterVehicleData.remove(selectedVehicle);
+            }
+        } else {
+            showSelectionError("error.pleaseSelectRemoveItem");
+        }
+    }
+
+    private void showSelectionError(String contentKey) {
         UIUtil.showErrorAlert(
                 LanguageManager.getInstance().getString("error.noItemSelected"),
-                LanguageManager.getInstance().getString("error.selectionRequired"),
-                LanguageManager.getInstance().getString("error.pleaseSelectEditItem"));
+                null,
+                LanguageManager.getInstance().getString(contentKey));
     }
 
     private HBox createButtonBar() {
@@ -171,7 +182,7 @@ public class VehicleView extends VBox {
 
         Button btnRemove = new Button(LanguageManager.getInstance().getString("btn.removeVehicle"));
         btnRemove.getStyleClass().add("action-button");
-        btnRemove.setOnAction(e -> handleRemove());
+        btnRemove.setOnAction(e -> handleRemoveVehicle());
 
         Button btnRefresh = new Button();
         btnRefresh.setGraphic(new FontIcon(FontAwesome.REFRESH));

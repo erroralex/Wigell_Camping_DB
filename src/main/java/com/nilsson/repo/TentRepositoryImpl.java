@@ -59,4 +59,11 @@ public class TentRepositoryImpl implements TentRepository {
             e.printStackTrace();
         }
     }
+
+    @Override
+    public List<Tent> findByIsRentedFalse() {
+        try (Session session = sessionFactory.openSession()) {
+            return session.createQuery("FROM Tent t WHERE t.isRented = false", Tent.class).list();
+        }
+    }
 }

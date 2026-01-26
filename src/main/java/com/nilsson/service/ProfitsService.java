@@ -1,150 +1,117 @@
 package com.nilsson.service;
 
 import com.nilsson.entity.DailyProfit;
-import com.nilsson.entity.Member;
 import com.nilsson.entity.Rental;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
+import com.nilsson.repo.DailyProfitRepository;
+import com.nilsson.repo.RentalRepository;
+import com.nilsson.repo.MemberRepository;
+import com.nilsson.entity.Member;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class ProfitsService {
 
-    private final RentalRegistry rentalRegistry = RentalRegistry.getInstance();
-    private final Inventory inventory = Inventory.getInstance();
-    private final MemberRegistry memberRegistry = MemberRegistry.getInstance();
-    private final ProfitDAO profitDAO;
-    private final ObservableList<DailyProfit> dailyProfits;
+    private final RentalRepository rentalRepo;
+    private final DailyProfitRepository profitRepo;
+    private final MemberRepository memberRepo;
 
-    public ProfitsService() {
-        this.profitDAO = new ProfitDAO();
-        this.dailyProfits = FXCollections.observableArrayList(profitDAO.getAllProfits());
+    public ProfitsService(RentalRepository rentalRepo,
+                          DailyProfitRepository profitRepo,
+                          MemberRepository memberRepo) {
+        this.rentalRepo = rentalRepo;
+        this.profitRepo = profitRepo;
+        this.memberRepo = memberRepo;
     }
 
-    public ObservableList<DailyProfit> getObservableDailyProfits() {
-        return dailyProfits;
+    public List<DailyProfit> getAllDailyProfits() {
+        List<DailyProfit> profits = profitRepo.findAll();
+        profits.sort(Comparator.comparing(DailyProfit::getDate));
+        return profits;
     }
 
-    // --- RESTORED METHOD ---
-    public List<DailyProfit> getDailyProfits() {
-        return dailyProfits;
-    }
-    // -----------------------
+    public void recalculateProfits() {
+        // 1. Fetch returned rentals
+        List<Rental> finishedRentals = rentalRepo.getAllRentals().stream()
+                .filter(r -> r.getEndTime() != null && r.getTotalCost() != null)
+                .collect(Collectors.toList());
 
-    public void recalculateProfitsFromRentals() {
-        // 1. Calculate Expected Income per Date based on ALL Rentals
-        Map<LocalDate, Double> calculatedIncomeMap = new HashMap<>();
+        // 2. Aggregate Income by Date using BigDecimal
+        Map<LocalDate, BigDecimal> incomeMap = new HashMap<>();
 
-        for (Rental rental : rentalRegistry.getRentals()) {
-            if (rental.getRentalDays() == null || rental.getRentalDays() <= 0) continue;
+        for (Rental r : finishedRentals) {
+            LocalDate date = r.getEndTime().toLocalDate();
+            BigDecimal cost = r.getTotalCost();
 
-            IRentable item = Inventory.getInstance().findItemByIdAndType(rental.getItemId(), rental.getItemType());
-            if (item == null) continue;
-
-            // Calculate cost for this specific rental
-            double totalCost = calculateRentalRevenue(rental);
-            double dailyCost = totalCost / rental.getRentalDays();
-
-            // Distribute cost over the days
-            LocalDate start = rental.getStartDate();
-            for (int i = 0; i < rental.getRentalDays(); i++) {
-                LocalDate day = start.plusDays(i);
-                calculatedIncomeMap.put(day, calculatedIncomeMap.getOrDefault(day, 0.0) + dailyCost);
-            }
-        }
-
-        // 2. Fetch Existing Profits from DB to avoid Duplicates
-        List<DailyProfit> existingProfits = profitDAO.getAllProfits();
-        Map<LocalDate, DailyProfit> dbProfitMap = existingProfits.stream()
-                .collect(Collectors.toMap(DailyProfit::getDate, p -> p, (p1, p2) -> p1));
-
-        // 3. Merge: Update existing records or Create new ones
-        List<DailyProfit> recordsToSave = new ArrayList<>();
-
-        // Add/Update calculated days
-        for (Map.Entry<LocalDate, Double> entry : calculatedIncomeMap.entrySet()) {
-            LocalDate date = entry.getKey();
-            Double amount = entry.getValue();
-
-            if (dbProfitMap.containsKey(date)) {
-                // UPDATE existing row (keeps the ID)
-                DailyProfit existing = dbProfitMap.get(date);
-                existing.setIncome(amount);
-                recordsToSave.add(existing);
+            if (incomeMap.containsKey(date)) {
+                incomeMap.put(date, incomeMap.get(date).add(cost));
             } else {
-                // CREATE new row
-                DailyProfit newProfit = new DailyProfit(date, amount);
-                recordsToSave.add(newProfit);
+                incomeMap.put(date, cost);
             }
         }
 
-        // 4. Save to Database
-        if (!recordsToSave.isEmpty()) {
-            profitDAO.saveAllProfits(recordsToSave);
+        // 3. Update DB records
+        List<DailyProfit> currentDbRecords = profitRepo.findAll();
+        Map<LocalDate, DailyProfit> dbMap = currentDbRecords.stream()
+                .collect(Collectors.toMap(DailyProfit::getDate, p -> p));
+
+        List<DailyProfit> toSave = new ArrayList<>();
+
+        for (Map.Entry<LocalDate, BigDecimal> entry : incomeMap.entrySet()) {
+            LocalDate date = entry.getKey();
+            BigDecimal amount = entry.getValue();
+
+            if (dbMap.containsKey(date)) {
+                // Update existing
+                DailyProfit p = dbMap.get(date);
+                p.setIncome(amount); // Sets BigDecimal
+                toSave.add(p);
+            } else {
+                // Create new
+                DailyProfit p = new DailyProfit(date, amount);
+                toSave.add(p);
+            }
         }
 
-        // 5. Update UI List
-        dailyProfits.setAll(recordsToSave);
-        FXCollections.sort(dailyProfits, Comparator.comparing(DailyProfit::getDate));
+        profitRepo.saveAll(toSave);
     }
 
-    public double calculateTotalIncome() {
-        return rentalRegistry.getRentals().stream()
-                .mapToDouble(this::calculateRentalRevenue)
-                .sum();
+    public BigDecimal calculateTotalIncome() {
+        return rentalRepo.getAllRentals().stream()
+                .filter(r -> r.getTotalCost() != null)
+                .map(Rental::getTotalCost)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-    public double getIncomeToday() {
-        return dailyProfits.stream()
-                .filter(p -> p.getDate().isEqual(LocalDate.now()))
-                .mapToDouble(DailyProfit::getIncome)
-                .findFirst()
-                .orElse(0.0);
-    }
-
-    public double calculateRentalRevenue(Rental rental) {
-        if (rental.getRentalDays() == null || rental.getRentalDays() <= 0) return 0.0;
-
-        IRentable item = Inventory.getInstance().findItemByIdAndType(rental.getItemId(), rental.getItemType());
-        if (item == null) return 0;
-
-        Member member = memberRegistry.findMemberById(rental.getMemberId());
-        String level = (member != null) ? member.getMembershipLevel() : "Standard";
-
-        IPricePolicy policy;
-        double dailyRate = item.getDailyPrice();
-
-        switch (level) {
-            case "Student":
-                policy = new StudentPricePolicy(dailyRate);
-                break;
-            case "Premium":
-                policy = new PremiumPricePolicy(dailyRate);
-                break;
-            default:
-                policy = new StandardPricePolicy(dailyRate);
-                break;
-        }
-        return policy.calculatePrice(rental.getRentalDays());
-    }
-
-    public double calculateMemberRevenue(int memberId) {
-        return rentalRegistry.getRentals().stream()
-                .filter(r -> r.getMemberId() == memberId)
-                .mapToDouble(this::calculateRentalRevenue)
-                .sum();
+    public BigDecimal getIncomeToday() {
+        LocalDate today = LocalDate.now();
+        DailyProfit profit = profitRepo.findByDate(today);
+        return (profit != null) ? profit.getIncome() : BigDecimal.ZERO;
     }
 
     public String generateMemberRevenueReport() {
+        List<Member> members = memberRepo.getAllMembers();
+        List<Rental> allRentals = rentalRepo.getAllRentals();
+
         StringBuilder sb = new StringBuilder();
-        for (Member member : memberRegistry.getMembers()) {
-            double revenue = calculateMemberRevenue(member.getId());
-            sb.append(String.format("%s %s: %.2f SEK%n",
-                    member.getFirstName(),
-                    member.getLastName(),
-                    revenue));
+        sb.append("--- Member Revenue Report ---\n");
+
+        for (Member member : members) {
+            BigDecimal memberTotal = allRentals.stream()
+                    .filter(r -> r.getMember().getId().equals(member.getId()))
+                    .filter(r -> r.getTotalCost() != null)
+                    .map(Rental::getTotalCost)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            if (memberTotal.compareTo(BigDecimal.ZERO) > 0) {
+                sb.append(String.format("ID %d - %s %s: %s SEK%n",
+                        member.getId(),
+                        member.getFirstName(),
+                        member.getLastName(),
+                        memberTotal.toPlainString()));
+            }
         }
         return sb.toString();
     }

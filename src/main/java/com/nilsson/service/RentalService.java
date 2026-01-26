@@ -4,21 +4,28 @@ import com.nilsson.entity.*;
 import com.nilsson.exception.ItemAlreadyRentedException;
 import com.nilsson.exception.ResourceNotFoundException;
 import com.nilsson.repo.*;
+import com.nilsson.service.policy.PremiumPricePolicy;
+import com.nilsson.service.policy.PricePolicy;
+import com.nilsson.service.policy.StandardPricePolicy;
+import com.nilsson.service.policy.StudentPricePolicy;
 import com.nilsson.util.LanguageManager;
 
+import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class RentalService {
-    private final RentalRepositoryImpl rentalRepo;
-    private final VehicleRepositoryImpl vehicleRepo;
-    private final TentRepositoryImpl tentRepo;
-    private final GearRepositoryImpl gearRepo;
+    private final RentalRepository rentalRepo;
+    private final VehicleRepository vehicleRepo;
+    private final TentRepository tentRepo;
+    private final GearRepository gearRepo;
 
-    // Dependency Injection via konstruktor (KRAV)
-    public RentalService(RentalRepositoryImpl rentalRepo,
-                         VehicleRepositoryImpl vehicleRepo,
-                         TentRepositoryImpl tentRepo,
-                         GearRepositoryImpl gearRepo) {
+    // Dependency Injection
+    public RentalService(RentalRepository rentalRepo,
+                         VehicleRepository vehicleRepo,
+                         TentRepository tentRepo,
+                         GearRepository gearRepo) {
 
         this.rentalRepo = rentalRepo;
         this.vehicleRepo = vehicleRepo;
@@ -26,61 +33,129 @@ public class RentalService {
         this.gearRepo = gearRepo;
     }
 
-    // En gemensam metod eller separata metoder beroende på designval
-    public void rentItem(Member member, Long itemId, RentalType type) {
-        // Validering och statusuppdatering måste ske per typ
-        switch (type) {
-            case VEHICLE -> rentVehicle(member, itemId);
-            case GEAR    -> rentGear(member, itemId);
-            case TENT    -> rentTent(member, itemId);
+    private PricePolicy getPolicyForMember(Member member) {
+        switch (member.getMembershipLevel()) {
+            case STUDENT:
+                return new StudentPricePolicy();
+            case PREMIUM:
+                return new PremiumPricePolicy();
+            default:
+                return new StandardPricePolicy();
         }
     }
 
-    private void rentVehicle(Member member, Long vehicleId) {
-        Vehicle v = vehicleRepo.getVehicle(vehicleId);
-        if (v == null) throw new ResourceNotFoundException(LanguageManager.getInstance().getString("error.vehicleNotFound"));
-        if (v.isRented()) throw new ItemAlreadyRentedException(LanguageManager.getInstance().getString("error.vehicleAlreadyRented"));
+    public void rentItem(Member member, Long itemId, RentalType type, LocalDateTime startDate) {
+        switch (type) {
+            case VEHICLE -> rentVehicle(member, itemId, startDate);
+            case GEAR -> rentGear(member, itemId, startDate);
+            case TENT -> rentTent(member, itemId, startDate);
+        }
+    }
 
-        // Skapa uthyrningen
-        Rental rental = new Rental(member, RentalType.VEHICLE, v.getId(), LocalDateTime.now());
+    public void returnItem(Rental rental) {
+        if (rental.getEndTime() != null) {
+            throw new IllegalStateException(LanguageManager.getInstance().getString("error.rentalAlreadyReturned"));
+        }
+
+        rental.setEndTime(LocalDateTime.now());
+        BigDecimal itemCostPerDay = BigDecimal.ZERO;
+
+        switch (rental.getRentalType()) {
+            case VEHICLE -> {
+                Vehicle v = vehicleRepo.getVehicle(rental.getRentalObjectId());
+                if (v != null) {
+                    itemCostPerDay = v.getCost();
+                    v.setRented(false);
+                    vehicleRepo.updateVehicle(v);
+                }
+            }
+            case GEAR -> {
+                Gear g = gearRepo.getGear(rental.getRentalObjectId());
+                if (g != null) {
+                    itemCostPerDay = g.getCost();
+                    g.setRented(false);
+                    gearRepo.updateGear(g);
+                }
+            }
+            case TENT -> {
+                Tent t = tentRepo.getTent(rental.getRentalObjectId());
+                if (t != null) {
+                    itemCostPerDay = t.getCost();
+                    t.setRented(false);
+                    tentRepo.updateTent(t);
+                }
+            }
+        }
+
+        long days = Duration.between(rental.getStartTime(), rental.getEndTime()).toDays();
+        if (days < 1) {
+            days = 1;
+        }
+
+        PricePolicy policy = getPolicyForMember(rental.getMember());
+        BigDecimal totalCost = policy.calculatePrice(itemCostPerDay, days);
+
+        rental.setTotalCost(totalCost);
+
+        // Update return
+        rentalRepo.update(rental);
+    }
+
+    private void rentVehicle(Member member, Long vehicleId, LocalDateTime date) {
+        Vehicle vehicle = vehicleRepo.getVehicle(vehicleId);
+        if (vehicle == null)
+            throw new ResourceNotFoundException(LanguageManager.getInstance().getString("error.vehicleNotFound"));
+        if (vehicle.isRented())
+            throw new ItemAlreadyRentedException(LanguageManager.getInstance().getString("error.vehicleAlreadyRented"));
 
         // Create rental
-        v.setRented(true);
-        vehicleRepo.updateVehicle(v);
+        Rental rental = new Rental(member, RentalType.VEHICLE, vehicle.getId(), date);
+
+        // Update status
+        vehicle.setRented(true);
+        vehicleRepo.updateVehicle(vehicle);
 
         // Save rental
         rentalRepo.save(rental);
     }
 
-    private void rentGear(Member member, Long gearId) {
-        Gear g = gearRepo.getGear(gearId);
-        if (g == null) throw new ResourceNotFoundException(LanguageManager.getInstance().getString("error.gearNotFound"));
-        if (g.isRented()) throw new ItemAlreadyRentedException(LanguageManager.getInstance().getString("error.gearAlreadyRented"));
+    private void rentGear(Member member, Long gearId, LocalDateTime date) {
+        Gear gear = gearRepo.getGear(gearId);
+        if (gear == null)
+            throw new ResourceNotFoundException(LanguageManager.getInstance().getString("error.gearNotFound"));
+        if (gear.isRented())
+            throw new ItemAlreadyRentedException(LanguageManager.getInstance().getString("error.gearAlreadyRented"));
 
         // Create rental
-        Rental rental = new Rental(member, RentalType.GEAR, g.getId(), LocalDateTime.now());
+        Rental rental = new Rental(member, RentalType.GEAR, gear.getId(), date);
 
         // Update status
-        g.setRented(true);
-        gearRepo.updateGear(g);
+        gear.setRented(true);
+        gearRepo.updateGear(gear);
 
         // Save rental
         rentalRepo.save(rental);
     }
 
-    private void rentTent(Member member, Long tentId) {
-        Tent t = tentRepo.getTent(tentId);
-        if (t == null) throw new ResourceNotFoundException(LanguageManager.getInstance().getString("error.tentNotFound"));
-        if (t.isRented()) throw new ItemAlreadyRentedException(LanguageManager.getInstance().getString("error.tentAlreadyRented"));
+    private void rentTent(Member member, Long tentId, LocalDateTime date) {
+        Tent tent = tentRepo.getTent(tentId);
+        if (tent == null)
+            throw new ResourceNotFoundException(LanguageManager.getInstance().getString("error.tentNotFound"));
+        if (tent.isRented())
+            throw new ItemAlreadyRentedException(LanguageManager.getInstance().getString("error.tentAlreadyRented"));
 
         // Create rental
-        Rental rental = new Rental(member, RentalType.TENT, t.getId(), LocalDateTime.now());
+        Rental rental = new Rental(member, RentalType.TENT, tent.getId(), date);
 
         // Update status
-        t.setRented(true);
-        tentRepo.updateTent(t);
+        tent.setRented(true);
+        tentRepo.updateTent(tent);
 
         // Save rental
         rentalRepo.save(rental);
+    }
+
+    public List<Rental> getAllRentals() {
+        return rentalRepo.getAllRentals();
     }
 }

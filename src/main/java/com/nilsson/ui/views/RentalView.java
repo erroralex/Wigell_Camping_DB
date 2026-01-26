@@ -1,39 +1,51 @@
 package com.nilsson.ui.views;
 
-import com.nilsson.util.LanguageManager;
-import com.nilsson.entity.Rental;
-import com.nilsson.registries.RentalRegistry;
+import com.nilsson.entity.*;
+import com.nilsson.model.NewRentalResult;
+import com.nilsson.service.InventoryService;
+import com.nilsson.service.MemberService;
 import com.nilsson.service.RentalService;
+import com.nilsson.ui.ServiceContainer;
 import com.nilsson.ui.UIUtil;
 import com.nilsson.ui.dialogs.NewRentalDialog;
+import com.nilsson.util.LanguageManager;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import org.kordamp.ikonli.fontawesome.FontAwesome;
 import org.kordamp.ikonli.javafx.FontIcon;
-
-import java.time.LocalDate;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 public class RentalView extends VBox {
 
     private final TableView<Rental> rentalsTable = new TableView<>();
     private final ObservableList<Rental> masterRentalData = FXCollections.observableArrayList();
-    private final RentalService rentalService = new RentalService();
-    private final Runnable onDataUpdate;
 
-    public RentalView(Runnable onDataUpdate) {
+    private final RentalService rentalService;
+    private final MemberService memberService;
+    private final InventoryService inventoryService;
+
+    private final Runnable onDataUpdate;
+    private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+
+    // Constructor Injection
+    public RentalView(ServiceContainer services, Runnable onDataUpdate) {
+        this.rentalService = services.getRentalService();
+        this.memberService = services.getMemberService();
+        this.inventoryService = services.getInventoryService();
         this.onDataUpdate = onDataUpdate;
 
-        // Layout & CSS
+        // Layout & Styling
         this.getStyleClass().add("content-view");
         this.setPadding(new Insets(20));
         this.setSpacing(20);
@@ -59,49 +71,62 @@ public class RentalView extends VBox {
 
         HBox buttonBar = new HBox(10, btnNewRental, btnReturn, btnRefresh);
 
-        loadData();
         initializeTable();
+        loadData();
 
         this.getChildren().addAll(title, buttonBar, rentalsTable);
     }
 
-    public RentalView() {
-        this(null);
-    }
-
     private void initializeTable() {
-        rentalsTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
+        rentalsTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
+        // Member
         TableColumn<Rental, String> memberCol = new TableColumn<>(LanguageManager.getInstance().getString("table.member"));
         memberCol.setCellValueFactory(cellData -> {
-            Rental rental = cellData.getValue();
-            if (rental.getMember() != null) {
-                return new SimpleStringProperty(rental.getMember().getFirstName() + " " + rental.getMember().getLastName());
+            Rental r = cellData.getValue();
+            if (r.getMember() != null) {
+                return new SimpleStringProperty(r.getMember().getFirstName() + " " + r.getMember().getLastName());
             }
-            return new SimpleStringProperty("Unknown ID: " + rental.getMemberId());
+            return new SimpleStringProperty("Unknown Member");
         });
 
+        // Item
         TableColumn<Rental, String> itemCol = new TableColumn<>(LanguageManager.getInstance().getString("table.item"));
-        itemCol.setCellValueFactory(cellData -> {
-            Rental rental = cellData.getValue();
-            return new SimpleStringProperty(rentalService.getItemNameFromId(rental.getItemId(), rental.getItemType()));
+        itemCol.setCellValueFactory(cellData ->
+                new SimpleStringProperty(cellData.getValue().getRentalType() + " (ID: " + cellData.getValue().getRentalObjectId() + ")")
+        );
+
+        // Date
+        TableColumn<Rental, String> dateCol = new TableColumn<>(LanguageManager.getInstance().getString("table.date"));
+        dateCol.setCellValueFactory(cellData -> {
+            if (cellData.getValue().getStartTime() != null) {
+                return new SimpleStringProperty(cellData.getValue().getStartTime().format(formatter));
+            }
+            return new SimpleStringProperty("");
         });
 
-        TableColumn<Rental, LocalDate> dateCol = new TableColumn<>(LanguageManager.getInstance().getString("table.date"));
-        dateCol.setCellValueFactory(new PropertyValueFactory<>("startDate"));
+        // Status
+        TableColumn<Rental, String> statusCol = new TableColumn<>("Status");
+        statusCol.setCellValueFactory(cellData -> {
+            Rental r = cellData.getValue();
+            if (r.getEndTime() != null) {
+                return new SimpleStringProperty("Returned");
+            } else {
+                long days = Duration.between(r.getStartTime(), LocalDateTime.now()).toDays();
+                return new SimpleStringProperty("Active (" + days + " days)");
+            }
+        });
 
-        TableColumn<Rental, Integer> daysCol = new TableColumn<>(LanguageManager.getInstance().getString("table.days"));
-        daysCol.setCellValueFactory(new PropertyValueFactory<>("rentalDays"));
-
-        rentalsTable.getColumns().addAll(memberCol, itemCol, dateCol, daysCol);
+        rentalsTable.getColumns().addAll(memberCol, itemCol, dateCol, statusCol);
         rentalsTable.setItems(masterRentalData);
     }
 
     private void loadData() {
-        List<Rental> allRentals = RentalRegistry.getInstance().getRentals();
+        List<Rental> allRentals = rentalService.getAllRentals();
         List<Rental> activeRentals = allRentals.stream()
-                .filter(r -> r.getStatus() == null || "ACTIVE".equalsIgnoreCase(r.getStatus()))
-                .collect(Collectors.toList());
+                .filter(r -> r.getEndTime() == null)
+                .toList();
+
         masterRentalData.setAll(activeRentals);
     }
 
@@ -110,48 +135,33 @@ public class RentalView extends VBox {
     }
 
     private void handleNewRental() {
-        NewRentalDialog dialog = new NewRentalDialog();
+        NewRentalDialog dialog = new NewRentalDialog(memberService, inventoryService);
+        Optional<NewRentalResult> result = dialog.showAndWait();
 
-        dialog.showAndWait().ifPresent(result -> {
-            IRentable selectedItem = result.getSelectedGear();
-            if (selectedItem == null) {
-                selectedItem = result.getSelectedVehicle();
-            }
+        result.ifPresent(res -> {
+            try {
+                Object item = res.getSelectedItem();
+                Long objectId = res.getObjectId();
 
-            if (selectedItem != null) {
-                boolean success = rentalService.handleNewRental(
-                        result.getSelectedMember(),
-                        selectedItem,
-                        result.getStartDate(),
-                        result.getDays()
+                rentalService.rentItem(
+                        res.getMember(),
+                        objectId,
+                        res.getType(),
+                        LocalDateTime.now()
                 );
 
-                if (success) {
-                    refreshData();
-                    if (onDataUpdate != null) {
-                        onDataUpdate.run();
-                    }
+                refreshData();
+                if (onDataUpdate != null) onDataUpdate.run();
 
-                    String memberName = result.getSelectedMember().getFirstName() + " " + result.getSelectedMember().getLastName();
-                    String itemName = selectedItem.getItemName();
+                UIUtil.showInfoAlert(
+                        LanguageManager.getInstance().getString("info.success"),
+                        "Rental Created",
+                        "Success"
+                );
 
-                    String details = LanguageManager.getInstance().getString("table.member") + ": " + memberName + "\n" +
-                            LanguageManager.getInstance().getString("table.item") + ": " + itemName + "\n" +
-                            LanguageManager.getInstance().getString("table.days") + ": " + result.getDays();
-
-                    UIUtil.showInfoAlert(
-                            LanguageManager.getInstance().getString("info.success"),
-                            LanguageManager.getInstance().getString("info.rentalAdded"),
-                            details
-                    );
-                } else {
-                    // FIXED: Replaced hardcoded strings
-                    UIUtil.showErrorAlert(
-                            LanguageManager.getInstance().getString("error.genericTitle"),
-                            LanguageManager.getInstance().getString("error.operationFailed"),
-                            LanguageManager.getInstance().getString("error.createRentalFailed")
-                    );
-                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                UIUtil.showErrorAlert("Error", "Rental Failed", e.getMessage());
             }
         });
     }
@@ -161,29 +171,26 @@ public class RentalView extends VBox {
         if (selected == null) {
             UIUtil.showErrorAlert(
                     LanguageManager.getInstance().getString("error.selectionRequired"),
-                    LanguageManager.getInstance().getString("error.noItemSelected"),
-                    LanguageManager.getInstance().getString("error.pleaseSelectRentalReturn"));
+                    "No Selection",
+                    "Please select a rental."
+            );
             return;
         }
 
-        boolean success = rentalService.handleReturnRental(selected);
-        if (success) {
-            // FIXED: Replaced hardcoded strings
+        try {
+            rentalService.returnItem(selected);
+
             UIUtil.showInfoAlert(
-                    LanguageManager.getInstance().getString("msg.success"),
-                    LanguageManager.getInstance().getString("info.rentalReturnedHeader"),
-                    LanguageManager.getInstance().getString("info.rentalReturnedMsg"));
+                    LanguageManager.getInstance().getString("info.success"),
+                    "Returned",
+                    "Total Cost: " + selected.getTotalCost()
+            );
 
             refreshData();
-            if (onDataUpdate != null) {
-                onDataUpdate.run();
-            }
-        } else {
-            // FIXED: Replaced hardcoded strings
-            UIUtil.showErrorAlert(
-                    LanguageManager.getInstance().getString("error.returnFailed"),
-                    LanguageManager.getInstance().getString("error.returnFailedHeader"),
-                    LanguageManager.getInstance().getString("error.returnFailedMsg"));
+            if (onDataUpdate != null) onDataUpdate.run();
+
+        } catch (Exception e) {
+            UIUtil.showErrorAlert("Error", "Return Failed", e.getMessage());
         }
     }
 }

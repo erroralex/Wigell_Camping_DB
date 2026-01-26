@@ -1,10 +1,12 @@
 package com.nilsson.ui.views;
 
-import com.nilsson.util.LanguageManager;
 import com.nilsson.entity.Gear;
-import com.nilsson.registries.Inventory;
+import com.nilsson.entity.Tent;
 import com.nilsson.service.InventoryService;
 import com.nilsson.ui.UIUtil;
+import com.nilsson.ui.dialogs.AddGearDialog;
+import com.nilsson.ui.dialogs.EditGearDialog;
+import com.nilsson.util.LanguageManager;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -19,22 +21,24 @@ import javafx.scene.layout.VBox;
 import org.kordamp.ikonli.fontawesome.FontAwesome;
 import org.kordamp.ikonli.javafx.FontIcon;
 
-import java.util.List;
+import java.math.BigDecimal;
+import java.util.Optional;
 
 public class GearView extends VBox {
 
-    private final TableView<Gear> gearTable = new TableView<>();
-    private final ObservableList<Gear> masterGearData = FXCollections.observableArrayList();
-    private final InventoryService inventoryService = new InventoryService();
+    private final TableView<InventoryItemViewModel> gearTable = new TableView<>();
+    private final ObservableList<InventoryItemViewModel> masterData = FXCollections.observableArrayList();
+    private final InventoryService inventoryService;
     private final TextField searchField = new TextField();
-    private FilteredList<Gear> filteredData;
+    private FilteredList<InventoryItemViewModel> filteredData;
 
-    public GearView() {
+    public GearView(InventoryService inventoryService) {
+        this.inventoryService = inventoryService;
+
         this.getStyleClass().add("content-view");
         this.setPadding(new Insets(20));
         this.setSpacing(20);
         this.setAlignment(Pos.TOP_LEFT);
-
         VBox.setVgrow(gearTable, Priority.ALWAYS);
 
         Label title = new Label(LanguageManager.getInstance().getString("txt.availableGear"));
@@ -43,30 +47,29 @@ public class GearView extends VBox {
         searchField.setPromptText(LanguageManager.getInstance().getString("txt.searchGear"));
         searchField.setMaxWidth(360);
 
-        loadMasterData();
         initializeTable();
+        loadMasterData(); // Loads both Gear and Tents
 
         HBox buttonBar = createButtonBar();
-
         this.getChildren().addAll(title, buttonBar, searchField, gearTable);
     }
 
     private void initializeTable() {
         gearTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
-        TableColumn<Gear, String> typeCol = new TableColumn<>(LanguageManager.getInstance().getString("table.type"));
+        TableColumn<InventoryItemViewModel, String> typeCol = new TableColumn<>(LanguageManager.getInstance().getString("table.type"));
         typeCol.setCellValueFactory(new PropertyValueFactory<>("type"));
 
-        TableColumn<Gear, String> modelCol = new TableColumn<>(LanguageManager.getInstance().getString("table.model"));
+        TableColumn<InventoryItemViewModel, String> modelCol = new TableColumn<>(LanguageManager.getInstance().getString("table.model"));
         modelCol.setCellValueFactory(new PropertyValueFactory<>("model"));
 
-        TableColumn<Gear, String> capacityCol = new TableColumn<>(LanguageManager.getInstance().getString("table.capacity"));
+        TableColumn<InventoryItemViewModel, String> capacityCol = new TableColumn<>(LanguageManager.getInstance().getString("table.capacity"));
         capacityCol.setCellValueFactory(new PropertyValueFactory<>("capacity"));
 
-        TableColumn<Gear, Double> priceCol = new TableColumn<>(LanguageManager.getInstance().getString("table.dailyPrice"));
-        priceCol.setCellValueFactory(new PropertyValueFactory<>("dailyPrice"));
+        TableColumn<InventoryItemViewModel, BigDecimal> priceCol = new TableColumn<>(LanguageManager.getInstance().getString("table.dailyPrice"));
+        priceCol.setCellValueFactory(new PropertyValueFactory<>("cost"));
 
-        TableColumn<Gear, Boolean> rentedCol = new TableColumn<>(LanguageManager.getInstance().getString("table.status"));
+        TableColumn<InventoryItemViewModel, Boolean> rentedCol = new TableColumn<>(LanguageManager.getInstance().getString("table.status"));
         rentedCol.setCellValueFactory(new PropertyValueFactory<>("rented"));
         rentedCol.setCellFactory(column -> new TableCell<>() {
             @Override
@@ -81,7 +84,7 @@ public class GearView extends VBox {
                         setStyle("-fx-text-fill: #8B0000; -fx-font-weight: bold;");
                     } else {
                         setText(LanguageManager.getInstance().getString("status.available"));
-                        setStyle("-fx-text-fill: #008B00;");
+                        setStyle("-fx-text-fill: #e69d67;");
                     }
                 }
             }
@@ -89,67 +92,114 @@ public class GearView extends VBox {
 
         gearTable.getColumns().addAll(typeCol, modelCol, capacityCol, priceCol, rentedCol);
 
-        filteredData = new FilteredList<>(masterGearData, p -> true);
-
+        filteredData = new FilteredList<>(masterData, p -> true);
         searchField.textProperty().addListener((observable, oldValue, newValue) -> {
-            filteredData.setPredicate(gear -> {
+            filteredData.setPredicate(item -> {
                 if (newValue == null || newValue.isEmpty()) return true;
-
-                String lowerCaseFilter = newValue.toLowerCase();
-                return gear.getModel().toLowerCase().contains(lowerCaseFilter) ||
-                        gear.getType().toLowerCase().contains(lowerCaseFilter) ||
-                        gear.getCapacity().toLowerCase().contains(lowerCaseFilter) ||
-                        String.valueOf(gear.getDailyPrice()).contains(lowerCaseFilter);
+                String lower = newValue.toLowerCase();
+                return item.getModel().toLowerCase().contains(lower) ||
+                        item.getType().toLowerCase().contains(lower) ||
+                        item.getCapacity().toLowerCase().contains(lower);
             });
         });
 
-        SortedList<Gear> sortedData = new SortedList<>(filteredData);
+        SortedList<InventoryItemViewModel> sortedData = new SortedList<>(filteredData);
         sortedData.comparatorProperty().bind(gearTable.comparatorProperty());
         gearTable.setItems(sortedData);
     }
 
     private void loadMasterData() {
-        // Calls Inventory -> DAO directly, so data is always fresh
-        List<Gear> gearList = Inventory.getInstance().getGearList();
-        masterGearData.setAll(gearList);
+        masterData.clear();
+
+        // 1. Fetch Tents and map to ViewModel
+        for (Tent t : inventoryService.getAllTents()) {
+            masterData.add(new InventoryItemViewModel(
+                    t.getId(), t.getModel(), "Tent", t.getCapacity(), t.getCost(), t.isRented(), true, t
+            ));
+        }
+
+        // 2. Fetch Gear and map to ViewModel
+        for (Gear g : inventoryService.getAllGear()) {
+            masterData.add(new InventoryItemViewModel(
+                    g.getId(), g.getModel(), g.getType(), g.getCapacity(), g.getCost(), g.isRented(), false, g
+            ));
+        }
     }
 
     public void refreshData() {
-        // REMOVED: Inventory.getInstance().refreshInventory();
         loadMasterData();
     }
 
     private void handleAddGear() {
-        Gear newGear = inventoryService.handleAddGear();
-        if (newGear != null) {
-            refreshData();
+        // Dialog now returns a ViewModel instead of an Entity
+        AddGearDialog dialog = new AddGearDialog();
+        Optional<InventoryItemViewModel> result = dialog.showAndWait();
+
+        if (result.isPresent()) {
+            InventoryItemViewModel item = result.get();
+
+            // LOGIC: Check if user selected "Tent" or something else
+            if (item.isTentEntity()) {
+                // Save as Tent Entity
+                Tent newTent = new Tent(item.getModel(), item.getCapacity(), item.getCost(), false);
+                inventoryService.addTent(newTent);
+            } else {
+                // Save as Gear Entity
+                Gear newGear = new Gear(item.getModel(), item.getType(), item.getCapacity(), item.getCost(), false);
+                inventoryService.addGear(newGear);
+            }
+            loadMasterData();
         }
     }
 
     private void handleEditGear() {
-        Gear selectedGear = gearTable.getSelectionModel().getSelectedItem();
+        InventoryItemViewModel selected = gearTable.getSelectionModel().getSelectedItem();
+        if (selected != null) {
+            EditGearDialog dialog = new EditGearDialog(selected);
+            Optional<InventoryItemViewModel> result = dialog.showAndWait();
 
-        if (selectedGear != null) {
-            inventoryService.handleEditGear(selectedGear);
-            gearTable.refresh();
+            if (result.isPresent()) {
+                InventoryItemViewModel updated = result.get();
+
+                if (selected.isTentEntity()) {
+                    // Update original Tent Entity
+                    Tent t = (Tent) selected.getOriginalEntity();
+                    t.setModel(updated.getModel());
+                    t.setCapacity(updated.getCapacity());
+                    t.setCost(updated.getCost());
+                    inventoryService.updateTent(t);
+                } else {
+                    // Update original Gear Entity
+                    Gear g = (Gear) selected.getOriginalEntity();
+                    g.setModel(updated.getModel());
+                    g.setType(updated.getType());
+                    g.setCapacity(updated.getCapacity());
+                    g.setCost(updated.getCost());
+                    inventoryService.updateGear(g);
+                }
+                loadMasterData();
+            }
         } else {
             showSelectionError("error.pleaseSelectEditItem");
         }
     }
 
     private void handleRemoveGear() {
-        Gear selectedGear = gearTable.getSelectionModel().getSelectedItem();
-
-        if (selectedGear != null) {
-            boolean confirmed = UIUtil.showConfirmationAlert(
+        InventoryItemViewModel selected = gearTable.getSelectionModel().getSelectedItem();
+        if (selected != null) {
+            boolean confirm = UIUtil.showConfirmationAlert(
                     LanguageManager.getInstance().getString("confirm.removal"),
-                    LanguageManager.getInstance().getString("confirm.confirm"),
-                    LanguageManager.getInstance().getString("confirm.selected") + " " + selectedGear.getModel() + "?");
+                    null,
+                    "Delete " + selected.getModel() + "?"
+            );
 
-            if (confirmed) {
-                if (inventoryService.handleRemoveGear(selectedGear)) {
-                    masterGearData.remove(selectedGear);
+            if (confirm) {
+                if (selected.isTentEntity()) {
+                    inventoryService.deleteTent((Tent) selected.getOriginalEntity());
+                } else {
+                    inventoryService.deleteGear((Gear) selected.getOriginalEntity());
                 }
+                masterData.remove(selected);
             }
         } else {
             showSelectionError("error.pleaseSelectRemoveItem");
@@ -159,7 +209,7 @@ public class GearView extends VBox {
     private void showSelectionError(String contentKey) {
         UIUtil.showErrorAlert(
                 LanguageManager.getInstance().getString("error.noItemSelected"),
-                LanguageManager.getInstance().getString("error.selectionRequired"),
+                null,
                 LanguageManager.getInstance().getString(contentKey));
     }
 
@@ -179,10 +229,8 @@ public class GearView extends VBox {
         Button btnRefresh = new Button();
         btnRefresh.setGraphic(new FontIcon(FontAwesome.REFRESH));
         btnRefresh.getStyleClass().add("action-button");
-        btnRefresh.setOnAction(e -> refreshData());
+        btnRefresh.setOnAction(e -> loadMasterData());
 
-        HBox buttonBar = new HBox(10, btnAdd, btnEdit, btnRemove, btnRefresh);
-        buttonBar.setAlignment(Pos.CENTER_LEFT);
-        return buttonBar;
+        return new HBox(10, btnAdd, btnEdit, btnRemove, btnRefresh);
     }
 }

@@ -1,218 +1,193 @@
 package com.nilsson.ui.dialogs;
 
-import com.nilsson.util.LanguageManager;
-import com.nilsson.entity.Member;
+import com.nilsson.entity.*;
 import com.nilsson.model.NewRentalResult;
-import com.nilsson.entity.Gear;
-import com.nilsson.registries.Inventory;
-import com.nilsson.registries.MemberRegistry;
+import com.nilsson.repo.MemberRepositoryImpl;
+import com.nilsson.service.InventoryService;
+import com.nilsson.service.MemberService;
 import com.nilsson.ui.UIUtil;
+import com.nilsson.util.HibernateUtil;
+import com.nilsson.util.LanguageManager;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class NewRentalDialog extends Dialog<NewRentalResult> {
 
+    private final MemberService memberService;
+    private final InventoryService inventoryService;
+
     private final ComboBox<Member> memberBox = new ComboBox<>();
-    private final ComboBox<String> itemTypeBox = new ComboBox<>();
+    private final ComboBox<RentalType> itemTypeBox = new ComboBox<>(); // Changed to Enum
+
     private final ComboBox<Gear> gearBox = new ComboBox<>();
-    private final ComboBox<RecreationalVehicle> vehicleBox = new ComboBox<>();
+    private final ComboBox<Vehicle> vehicleBox = new ComboBox<>();
+    private final ComboBox<Tent> tentBox = new ComboBox<>();
+
     private final DatePicker startDatePicker = new DatePicker(LocalDate.now());
-    private final TextField daysField = new TextField();
 
-    // Changed from static to instance variables to support language switching
-    private final String typeGear;
-    private final String typeVehicle;
-
-    public NewRentalDialog() {
-        // 1. Load strings inside the constructor to ensure they are current
-        this.typeGear = LanguageManager.getInstance().getString("txt.newRentalTypeGear");
-        this.typeVehicle = LanguageManager.getInstance().getString("txt.newRentalTypeVehicle");
+    public NewRentalDialog(MemberService memberService, InventoryService inventoryService) {
+        this.memberService = memberService;
+        this.inventoryService = inventoryService;
 
         setTitle(LanguageManager.getInstance().getString("txt.newRentalTitle"));
         setHeaderText(LanguageManager.getInstance().getString("txt.newRentalHeader"));
 
-        // Theme/drag support
-        this.setOnShowing(event -> UIUtil.applyDialogSetup(this));
+        // Setup Buttons
+        ButtonType createBtnType = new ButtonType(LanguageManager.getInstance().getString("btn.createRental"), ButtonBar.ButtonData.OK_DONE);
+        getDialogPane().getButtonTypes().addAll(createBtnType, ButtonType.CANCEL);
 
-        ButtonType createButtonType = new ButtonType(LanguageManager.getInstance().getString("btn.createRental"),
-                ButtonBar.ButtonData.OK_DONE);
-        ButtonType cancelButtonType = new ButtonType(LanguageManager.getInstance().getString("btn.cancel"),
-                ButtonBar.ButtonData.CANCEL_CLOSE);
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
 
-        getDialogPane().getButtonTypes().addAll(createButtonType, cancelButtonType);
-
-        GridPane grid = createGridPane();
-
-        // Member
-        List<Member> members = MemberRegistry.getInstance().getMembers();
-        memberBox.getItems().addAll(members);
-        memberBox.setMaxWidth(Double.MAX_VALUE);
+        // 1. Member Selection
         memberBox.setPromptText(LanguageManager.getInstance().getString("txt.selectMember"));
-
-        // Show member
-        memberBox.setCellFactory(cb -> new ListCell<Member>() {
+        memberBox.getItems().addAll(memberService.getAllMembers());
+        // Custom Cell Factory to show Name + ID
+        memberBox.setCellFactory(param -> new ListCell<>() {
             @Override
             protected void updateItem(Member item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                } else {
-                    setText(item.getFirstName() + " " + item.getLastName() + " (ID: " + item.getId() + ")");
-                }
+                if (empty || item == null) setText(null);
+                else setText(item.getFirstName() + " " + item.getLastName() + " (ID: " + item.getId() + ")");
             }
         });
+        memberBox.setButtonCell(memberBox.getCellFactory().call(null)); // Apply to selected view
 
-        memberBox.setButtonCell(memberBox.getCellFactory().call(null));
+        // 2. Type Selection (Use the Enum directly)
+        itemTypeBox.getItems().setAll(RentalType.values());
+        itemTypeBox.setValue(RentalType.GEAR); // Default
 
-        // Item type
-        itemTypeBox.getItems().addAll(typeGear, typeVehicle);
-        itemTypeBox.setValue(typeGear);
-        itemTypeBox.setMaxWidth(Double.MAX_VALUE);
+        // 3. Load Available Items
+        loadAvailableItems();
 
-        // Item combos
-        loadAvailableGear();
-        loadAvailableVehicles();
-
-        gearBox.setMaxWidth(Double.MAX_VALUE);
-        vehicleBox.setMaxWidth(Double.MAX_VALUE);
-
-        // Display items
-        gearBox.setCellFactory(cb -> new ListCell<Gear>() {
-            @Override
-            protected void updateItem(Gear item, boolean empty) {
-                super.updateItem(item, empty);
-                setText(empty || item == null ? null : item.getModel() + " (" + item.getType() + ")");
-            }
-        });
-
-        gearBox.setButtonCell(gearBox.getCellFactory().call(null));
-
-        vehicleBox.setCellFactory(cb -> new ListCell<RecreationalVehicle>() {
-            @Override
-            protected void updateItem(RecreationalVehicle item, boolean empty) {
-                super.updateItem(item, empty);
-                setText(empty || item == null ? null : item.getMake() + " " + item.getModel() + " (" + item.getType() + ")");
-            }
-        });
-
-        vehicleBox.setButtonCell(vehicleBox.getCellFactory().call(null));
-
-        // Days
-        daysField.setPromptText(LanguageManager.getInstance().getString("txt.daysPrompt"));
-
-        // Layout
+        // 4. Layout
         grid.add(new Label(LanguageManager.getInstance().getString("table.member")), 0, 0);
         grid.add(memberBox, 1, 0);
 
         grid.add(new Label(LanguageManager.getInstance().getString("txt.itemType")), 0, 1);
         grid.add(itemTypeBox, 1, 1);
 
-        grid.add(new Label(LanguageManager.getInstance().getString("txt.itemGear")), 0, 2);
+        // Stack the specific item boxes in the same grid cell
+        grid.add(new Label("Item:"), 0, 2);
         grid.add(gearBox, 1, 2);
+        grid.add(vehicleBox, 1, 2);
+        grid.add(tentBox, 1, 2);
 
-        grid.add(new Label(LanguageManager.getInstance().getString("txt.itemVehicle")), 0, 3);
-        grid.add(vehicleBox, 1, 3);
-
-        grid.add(new Label(LanguageManager.getInstance().getString("table.startDate")), 0, 4);
-        grid.add(startDatePicker, 1, 4);
-
-        grid.add(new Label(LanguageManager.getInstance().getString("txt.numberOfDays")), 0, 5);
-        grid.add(daysField, 1, 5);
+        grid.add(new Label(LanguageManager.getInstance().getString("table.startDate")), 0, 3);
+        grid.add(startDatePicker, 1, 3);
 
         getDialogPane().setContent(grid);
 
-        // Toggle which item combo is active
-        updateItemComboVisibility();
-        itemTypeBox.valueProperty().addListener((obs, oldV, newV) -> updateItemComboVisibility());
+        // 5. Logic
+        configureItemBoxes(); // Helper to set cell factories
+        updateVisibility();   // Initial visibility check
 
-        // Focus
+        itemTypeBox.valueProperty().addListener((obs, oldV, newV) -> updateVisibility());
+
+        // Enable/Disable Create Button
+        Button createBtn = (Button) getDialogPane().lookupButton(createBtnType);
+        createBtn.disableProperty().bind(
+                memberBox.valueProperty().isNull()
+                        .or(startDatePicker.valueProperty().isNull())
+        );
+
         Platform.runLater(memberBox::requestFocus);
 
-        // Enable/disable button
-        Button createButton = (Button) getDialogPane().lookupButton(createButtonType);
-        createButton.disableProperty().bind
-                (memberBox.valueProperty().isNull().or
-                        (startDatePicker.valueProperty().isNull()).or
-                        (daysField.textProperty().isEmpty()));
-
+        // 6. Convert Result
         setResultConverter(dialogButton -> {
-            if (dialogButton == createButtonType) {
-                Member member = memberBox.getValue();
-                String type = itemTypeBox.getValue();
-
-                Gear gear = null;
-                RecreationalVehicle vehicle = null;
-
-                if (typeGear.equals(type)) {
-                    gear = gearBox.getValue();
-                    if (gear == null) {
-                        UIUtil.showErrorAlert(
-                                LanguageManager.getInstance().getString("error.missingItem"),
-                                LanguageManager.getInstance().getString("error.noItemSelected"),
-                                LanguageManager.getInstance().getString("error.pleaseSelectItem"));
-                        return null;
-                    }
-                } else {
-                    vehicle = vehicleBox.getValue();
-                    if (vehicle == null) {
-                        UIUtil.showErrorAlert(
-                                LanguageManager.getInstance().getString("error.missingItem"),
-                                LanguageManager.getInstance().getString("error.noItemSelected"),
-                                LanguageManager.getInstance().getString("error.pleaseSelectItem"));
-                        return null;
-                    }
-                }
-
-                int days;
-                try {
-                    days = Integer.parseInt(daysField.getText().trim());
-                    if (days <= 0) {
-                        throw new NumberFormatException(LanguageManager.getInstance().getString("error.numFormat"));
-                    }
-                } catch (NumberFormatException ex) {
-                    UIUtil.showErrorAlert(
-                            LanguageManager.getInstance().getString("error.invalidDays"),
-                            LanguageManager.getInstance().getString("error.input"),
-                            LanguageManager.getInstance().getString("error.daysInput"));
-                    return null;
-                }
-
-                return new NewRentalResult(member, gear, vehicle, startDatePicker.getValue(), days);
+            if (dialogButton == createBtnType) {
+                return buildResult();
             }
             return null;
         });
     }
 
-    private GridPane createGridPane() {
-        GridPane grid = new GridPane();
-        grid.setHgap(15);
-        grid.setVgap(20);
-        grid.setPadding(new Insets(20, 20, 10, 10));
-        return grid;
+    private void configureItemBoxes() {
+        // Formatter for Gear
+        gearBox.setCellFactory(cb -> new ListCell<>() {
+            @Override
+            protected void updateItem(Gear item, boolean empty) {
+                super.updateItem(item, empty);
+                setText((empty || item == null) ? null : item.getModel() + " (" + item.getType() + ")");
+            }
+        });
+        gearBox.setButtonCell(gearBox.getCellFactory().call(null));
+
+        // Formatter for Vehicle
+        vehicleBox.setCellFactory(cb -> new ListCell<>() {
+            @Override
+            protected void updateItem(Vehicle item, boolean empty) {
+                super.updateItem(item, empty);
+                setText((empty || item == null) ? null : item.getMake() + " " + item.getModel() + " - " + item.getId());
+            }
+        });
+        vehicleBox.setButtonCell(vehicleBox.getCellFactory().call(null));
+
+        // Formatter for Tent
+        tentBox.setCellFactory(cb -> new ListCell<>() {
+            @Override
+            protected void updateItem(Tent item, boolean empty) {
+                super.updateItem(item, empty);
+                setText((empty || item == null) ? null : item.getModel() + " (Cap: " + item.getCapacity() + ")");
+            }
+        });
+        tentBox.setButtonCell(tentBox.getCellFactory().call(null));
     }
 
-    private void updateItemComboVisibility() {
-        // Use the instance variable 'typeGear'
-        boolean gearSelected = typeGear.equals(itemTypeBox.getValue());
-        gearBox.setDisable(!gearSelected);
-        vehicleBox.setDisable(gearSelected);
-        if (gearSelected) {
-            vehicleBox.setValue(null);
-        } else {
-            gearBox.setValue(null);
+    private void updateVisibility() {
+        RentalType type = itemTypeBox.getValue();
+
+        gearBox.setVisible(type == RentalType.GEAR);
+        gearBox.setManaged(type == RentalType.GEAR);
+
+        vehicleBox.setVisible(type == RentalType.VEHICLE);
+        vehicleBox.setManaged(type == RentalType.VEHICLE);
+
+        tentBox.setVisible(type == RentalType.TENT);
+        tentBox.setManaged(type == RentalType.TENT);
+    }
+
+    private void loadAvailableItems() {
+        gearBox.getItems().setAll(inventoryService.getAllGear().stream().filter(i -> !i.isRented()).collect(Collectors.toList()));
+        vehicleBox.getItems().setAll(inventoryService.getAllVehicles().stream().filter(i -> !i.isRented()).collect(Collectors.toList()));
+        tentBox.getItems().setAll(inventoryService.getAllTents().stream().filter(i -> !i.isRented()).collect(Collectors.toList()));
+    }
+
+    private NewRentalResult buildResult() {
+        Member member = memberBox.getValue();
+        RentalType type = itemTypeBox.getValue();
+        Object selectedItem = null;
+
+        if (type == RentalType.GEAR) selectedItem = gearBox.getValue();
+        else if (type == RentalType.VEHICLE) selectedItem = vehicleBox.getValue();
+        else if (type == RentalType.TENT) selectedItem = tentBox.getValue();
+
+        if (selectedItem == null) {
+            UIUtil.showErrorAlert("Validation Error", "No Item Selected", "Please select an item to rent.");
+            return null;
         }
-    }
 
-    private void loadAvailableGear() {
-        gearBox.getItems().setAll(Inventory.getInstance().getAvailableGearList());
-    }
+        // Logic: Combine the selected Date with Current Time
+        // If date is today -> Use LocalTime.now()
+        // If date is past -> Use Start of day (00:00) or Noon? Let's use Noon to be safe, or 12:00.
+        // Best practice for "Check Out" is usually NOW.
 
-    private void loadAvailableVehicles() {
-        vehicleBox.getItems().setAll(Inventory.getInstance().getAvailableRecreationalVehicleList());
+        LocalDate selectedDate = startDatePicker.getValue();
+        LocalTime timePart = LocalTime.now();
+
+        // If the admin backdates to yesterday, we probably want 08:00 or something, but keeping current time is usually fine for calculation
+        LocalDateTime startDateTime = LocalDateTime.of(selectedDate, timePart);
+
+        return new NewRentalResult(member, selectedItem, type, startDateTime);
     }
 }

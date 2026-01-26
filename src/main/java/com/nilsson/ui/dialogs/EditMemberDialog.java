@@ -1,5 +1,6 @@
 package com.nilsson.ui.dialogs;
 
+import com.nilsson.entity.MembershipLevel;
 import com.nilsson.util.LanguageManager;
 import com.nilsson.entity.Member;
 import com.nilsson.ui.UIUtil;
@@ -14,7 +15,7 @@ public class EditMemberDialog extends Dialog<Member> {
     private final TextField lastNameField = new TextField();
     private final ComboBox<String> levelBox = new ComboBox<>();
 
-    private static final String DEFAULT_LEVEL = "Standard";
+    private static final String STANDARD_LEVEL = "Standard";
     private static final String PREMIUM_LEVEL = "Premium";
     private static final String STUDENT_LEVEL = "Student";
 
@@ -44,8 +45,12 @@ public class EditMemberDialog extends Dialog<Member> {
         GridPane grid = createGridPane();;
 
         // ComboBox
-        levelBox.getItems().addAll(DEFAULT_LEVEL, PREMIUM_LEVEL, STUDENT_LEVEL);
-        levelBox.setValue(DEFAULT_LEVEL);
+        switch (memberToEdit.getMembershipLevel()) {
+            case PREMIUM -> levelBox.setValue(PREMIUM_LEVEL);
+            case STUDENT -> levelBox.setValue(STUDENT_LEVEL);
+            default -> levelBox.setValue(STANDARD_LEVEL);
+        }
+
         levelBox.setMaxWidth(Double.MAX_VALUE);
 
         // Grid layout
@@ -77,7 +82,9 @@ public class EditMemberDialog extends Dialog<Member> {
             if (dialogButton == saveButtonType) {
                 memberToEdit.setFirstName(firstNameField.getText().trim());
                 memberToEdit.setLastName(lastNameField.getText().trim());
-                memberToEdit.setMembershipLevel(levelBox.getValue());
+                String selectedString = levelBox.getValue();
+                MembershipLevel level = MembershipLevel.valueOf(selectedString.toUpperCase());
+                memberToEdit.setMembershipLevel(level);
                 return memberToEdit;
             }
             // If Cancel is clicked

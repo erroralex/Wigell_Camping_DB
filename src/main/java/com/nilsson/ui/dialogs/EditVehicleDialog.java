@@ -1,5 +1,6 @@
 package com.nilsson.ui.dialogs;
 
+import com.nilsson.entity.Vehicle;
 import com.nilsson.util.LanguageManager;
 import com.nilsson.ui.UIUtil;
 import javafx.application.Platform;
@@ -7,7 +8,9 @@ import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 
-public class EditVehicleDialog extends Dialog<RecreationalVehicle> {
+import java.math.BigDecimal;
+
+public class EditVehicleDialog extends Dialog<Vehicle> {
 
     private final TextField makeField = new TextField();
     private final TextField modelField = new TextField();
@@ -20,15 +23,15 @@ public class EditVehicleDialog extends Dialog<RecreationalVehicle> {
     private static final String MOTORHOME = LanguageManager.getInstance().getString("txt.motorhome");
     private static final String CAMPERVAN = LanguageManager.getInstance().getString("txt.campervan");
 
-    private final RecreationalVehicle recreationalVehicleToEdit;
+    private final Vehicle vehicleToEdit;
 
-    public EditVehicleDialog(RecreationalVehicle recreationalVehicleToEdit) {
+    public EditVehicleDialog(Vehicle vehicleToEdit) {
 
-        this.recreationalVehicleToEdit = recreationalVehicleToEdit;
+        this.vehicleToEdit = vehicleToEdit;
 
         setTitle(LanguageManager.getInstance().getString("txt.editVehicleTitle"));
-        setHeaderText(LanguageManager.getInstance().getString("txt.editVehicleHeader") + " " + recreationalVehicleToEdit.getMake() + " " +
-                recreationalVehicleToEdit.getModel());
+        setHeaderText(LanguageManager.getInstance().getString("txt.editVehicleHeader") + " " + vehicleToEdit.getMake() + " " +
+                vehicleToEdit.getModel());
 
         // Apply theme and mouse-drag
         this.setOnShowing(dialogEvent -> {
@@ -48,18 +51,18 @@ public class EditVehicleDialog extends Dialog<RecreationalVehicle> {
 
         // ComboBox
         typeBox.getItems().addAll(CARAVAN, CAMPERVAN, MOTORHOME);
-        typeBox.setValue(recreationalVehicleToEdit.getType());
+        typeBox.setValue(vehicleToEdit.getType());
         typeBox.setMaxWidth(Double.MAX_VALUE);
 
         // Grid layout
         grid.add(new Label(LanguageManager.getInstance().getString("table.make")), 0, 0);
         grid.add(makeField, 1, 0);
-        makeField.setText(recreationalVehicleToEdit.getMake());
+        makeField.setText(vehicleToEdit.getMake());
         makeField.setPromptText(LanguageManager.getInstance().getString("txt.makePrompt"));
 
         grid.add(new Label(LanguageManager.getInstance().getString("table.model")), 0, 1);
         grid.add(modelField, 1, 1);
-        modelField.setText(recreationalVehicleToEdit.getModel());
+        modelField.setText(vehicleToEdit.getModel());
         modelField.setPromptText(LanguageManager.getInstance().getString("txt.modelPrompt"));
 
         grid.add(new Label(LanguageManager.getInstance().getString("table.type")), 0, 2);
@@ -67,17 +70,17 @@ public class EditVehicleDialog extends Dialog<RecreationalVehicle> {
 
         grid.add(new Label(LanguageManager.getInstance().getString("table.year")), 0, 3);
         grid.add(yearField, 1, 3);
-        yearField.setText(recreationalVehicleToEdit.getYear());
+        yearField.setText(vehicleToEdit.getYear());
         yearField.setPromptText(LanguageManager.getInstance().getString("txt.yearPrompt"));
 
         grid.add(new Label(LanguageManager.getInstance().getString("table.capacity")), 0, 4);
         grid.add(capacityField, 1, 4);
-        capacityField.setText(recreationalVehicleToEdit.getCapacity());
+        capacityField.setText(vehicleToEdit.getCapacity());
         capacityField.setPromptText(LanguageManager.getInstance().getString("txt.capacityPrompt"));
 
         grid.add(new Label(LanguageManager.getInstance().getString("table.dailyPrice")), 0, 5);
         grid.add(priceField, 1, 5);
-        priceField.setText(String.valueOf(recreationalVehicleToEdit.getDailyPrice()));
+        priceField.setText(String.valueOf(vehicleToEdit.getCost()));
         priceField.setPromptText(LanguageManager.getInstance().getString("txt.dailyPricePrompt"));
 
         getDialogPane().setContent(grid);
@@ -97,13 +100,13 @@ public class EditVehicleDialog extends Dialog<RecreationalVehicle> {
 
         setResultConverter(dialogButton -> {
             if (dialogButton == saveButtonType) {
-                recreationalVehicleToEdit.setModel(modelField.getText().trim());
-                recreationalVehicleToEdit.setMake(makeField.getText().trim());
-                recreationalVehicleToEdit.setType(typeBox.getValue());
-                recreationalVehicleToEdit.setYear(yearField.getText().trim());
-                recreationalVehicleToEdit.setCapacity(capacityField.getText().trim());
-                recreationalVehicleToEdit.setDailyPrice(Double.parseDouble(priceField.getText().trim()));
-                return recreationalVehicleToEdit;
+                vehicleToEdit.setModel(modelField.getText().trim());
+                vehicleToEdit.setMake(makeField.getText().trim());
+                vehicleToEdit.setType(typeBox.getValue());
+                vehicleToEdit.setYear(yearField.getText().trim());
+                vehicleToEdit.setCapacity(capacityField.getText().trim());
+                vehicleToEdit.setCost(new BigDecimal(priceField.getText().trim()));
+                return vehicleToEdit;
             }
             // If Cancel is clicked
             return null;

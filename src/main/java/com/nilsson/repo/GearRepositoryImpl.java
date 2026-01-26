@@ -59,4 +59,11 @@ public class GearRepositoryImpl implements GearRepository {
             e.printStackTrace();
         }
     }
+
+    @Override
+    public List<Gear> findByIsRentedFalse() {
+        try (Session session = sessionFactory.openSession()) {
+            return session.createQuery("FROM Gear g WHERE g.isRented = false", Gear.class).list();
+        }
+    }
 }

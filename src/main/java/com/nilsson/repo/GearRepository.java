@@ -10,4 +10,5 @@ public interface GearRepository {
     void addGear(Gear gear);
     void updateGear(Gear gear);
     void deleteGear(Gear gear);
+    List<Gear> findByIsRentedFalse();
 }

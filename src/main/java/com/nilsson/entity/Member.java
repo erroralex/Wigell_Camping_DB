@@ -20,8 +20,9 @@ public class Member {
     @Column(name = "last_name", nullable = false, length = 100)
     private String lastName;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "level", nullable = false, length = 50)
-    private String membershipLevel;
+    private MembershipLevel membershipLevel;
 
     @Column(name = "entered_date")
     private LocalDate enteredDate;
@@ -36,7 +37,7 @@ public class Member {
         this.enteredDate = LocalDate.now();
     }
 
-    public Member(String firstName, String lastName, String membershipLevel) {
+    public Member(String firstName, String lastName, MembershipLevel membershipLevel) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.membershipLevel = membershipLevel;
@@ -53,8 +54,8 @@ public class Member {
     public String getLastName() { return lastName; }
     public void setLastName(String lastName) { this.lastName = lastName; }
 
-    public String getMembershipLevel() { return membershipLevel; }
-    public void setMembershipLevel(String membershipLevel) { this.membershipLevel = membershipLevel; }
+    public MembershipLevel getMembershipLevel() { return membershipLevel; }
+    public void setMembershipLevel(MembershipLevel membershipLevel) { this.membershipLevel = membershipLevel; }
 
     public LocalDate getEnteredDate() { return enteredDate; }
     public void setEnteredDate(LocalDate enteredDate) { this.enteredDate = enteredDate; }

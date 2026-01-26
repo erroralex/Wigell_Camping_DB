@@ -26,9 +26,18 @@ public class RentalRepositoryImpl implements RentalRepository {
     }
 
     @Override
+    public void update(Rental rental) {
+        try (Session session = sessionFactory.openSession()) {
+            Transaction tx = session.beginTransaction();
+            session.merge(rental); // merge updates existing
+            tx.commit();
+        }
+    }
+
+    @Override
     public List<Rental> getRentalsByMemberId(Long memberId) {
         try (Session session = sessionFactory.openSession()) {
-            return session.createQuery("FROM Rental r WHERE r.member.id = :memberId", Rental.class)
+            return session.createQuery("FROM Rental r JOIN FETCH r.member WHERE r.member.id = :memberId", Rental.class)
                     .setParameter("memberId", memberId)
                     .list();
         }
@@ -37,7 +46,7 @@ public class RentalRepositoryImpl implements RentalRepository {
     @Override
     public List<Rental> getAllRentals() {
         try (Session session = sessionFactory.openSession()) {
-            return session.createQuery("FROM Rental", Rental.class).list();
+            return session.createQuery("FROM Rental r JOIN FETCH r.member", Rental.class).list();
         }
     }
 }

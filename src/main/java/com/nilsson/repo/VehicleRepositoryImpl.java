@@ -58,4 +58,11 @@ public class VehicleRepositoryImpl implements VehicleRepository {
             e.printStackTrace();
         }
     }
+
+    @Override
+    public List<Vehicle> findByIsRentedFalse() {
+        try (Session session = sessionFactory.openSession()) {
+            return session.createQuery("FROM Vehicle v WHERE v.isRented = false", Vehicle.class).list();
+        }
+    }
 }

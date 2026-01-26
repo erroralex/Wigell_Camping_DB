@@ -10,4 +10,5 @@ public interface VehicleRepository {
     void addVehicle(Vehicle vehicle);
     void updateVehicle(Vehicle vehicle);
     void deleteVehicle(Vehicle vehicle);
+    List<Vehicle> findByIsRentedFalse();
 }
