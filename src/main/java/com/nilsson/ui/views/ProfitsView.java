@@ -103,7 +103,7 @@ public class ProfitsView extends VBox {
         for (DailyProfit profit : recentProfits) {
             chartData.add(new XYChart.Data<>(
                     profit.getDate().format(DATE_FORMATTER),
-                    profit.getIncome().doubleValue() // Convert BigDecimal to Double for Chart
+                    profit.getIncome().doubleValue()
             ));
         }
 

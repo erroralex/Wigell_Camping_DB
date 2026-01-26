@@ -34,12 +34,14 @@ public class RentalView extends VBox {
     private final RentalService rentalService;
     private final MemberService memberService;
     private final InventoryService inventoryService;
+    private final ServiceContainer services;
 
     private final Runnable onDataUpdate;
-    private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+    private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
     // Constructor Injection
     public RentalView(ServiceContainer services, Runnable onDataUpdate) {
+        this.services = services;
         this.rentalService = services.getRentalService();
         this.memberService = services.getMemberService();
         this.inventoryService = services.getInventoryService();
@@ -87,13 +89,13 @@ public class RentalView extends VBox {
             if (r.getMember() != null) {
                 return new SimpleStringProperty(r.getMember().getFirstName() + " " + r.getMember().getLastName());
             }
-            return new SimpleStringProperty("Unknown Member");
+            return new SimpleStringProperty(LanguageManager.getInstance().getString("txt.unknownMember"));
         });
 
         // Item
         TableColumn<Rental, String> itemCol = new TableColumn<>(LanguageManager.getInstance().getString("table.item"));
         itemCol.setCellValueFactory(cellData ->
-                new SimpleStringProperty(cellData.getValue().getRentalType() + " (ID: " + cellData.getValue().getRentalObjectId() + ")")
+                new SimpleStringProperty(resolveItemName(cellData.getValue()))
         );
 
         // Date
@@ -106,14 +108,17 @@ public class RentalView extends VBox {
         });
 
         // Status
-        TableColumn<Rental, String> statusCol = new TableColumn<>("Status");
+        TableColumn<Rental, String> statusCol = new TableColumn<>(LanguageManager.getInstance().getString("table.status"));
         statusCol.setCellValueFactory(cellData -> {
             Rental r = cellData.getValue();
             if (r.getEndTime() != null) {
-                return new SimpleStringProperty("Returned");
+                return new SimpleStringProperty(LanguageManager.getInstance().getString("status.returned"));
             } else {
                 long days = Duration.between(r.getStartTime(), LocalDateTime.now()).toDays();
-                return new SimpleStringProperty("Active (" + days + " days)");
+                return new SimpleStringProperty(
+                        LanguageManager.getInstance().getString("status.active")
+                                + " (" + days
+                                + LanguageManager.getInstance().getString("txt.days"));
             }
         });
 
@@ -135,7 +140,7 @@ public class RentalView extends VBox {
     }
 
     private void handleNewRental() {
-        NewRentalDialog dialog = new NewRentalDialog(memberService, inventoryService);
+        NewRentalDialog dialog = new NewRentalDialog(services);
         Optional<NewRentalResult> result = dialog.showAndWait();
 
         result.ifPresent(res -> {
@@ -155,13 +160,17 @@ public class RentalView extends VBox {
 
                 UIUtil.showInfoAlert(
                         LanguageManager.getInstance().getString("info.success"),
-                        "Rental Created",
-                        "Success"
+                        LanguageManager.getInstance().getString("info.rentalCreatedTitle"),
+                        LanguageManager.getInstance().getString("info.success")
                 );
 
             } catch (Exception e) {
                 e.printStackTrace();
-                UIUtil.showErrorAlert("Error", "Rental Failed", e.getMessage());
+                UIUtil.showErrorAlert(
+                        LanguageManager.getInstance().getString("error.genericTitle"),
+                        LanguageManager.getInstance().getString("error.rentalFailed"),
+                        e.getMessage()
+                );
             }
         });
     }
@@ -171,8 +180,8 @@ public class RentalView extends VBox {
         if (selected == null) {
             UIUtil.showErrorAlert(
                     LanguageManager.getInstance().getString("error.selectionRequired"),
-                    "No Selection",
-                    "Please select a rental."
+                    LanguageManager.getInstance().getString("error.noSelectionTitle"),
+                    LanguageManager.getInstance().getString("error.pleaseSelectRentalReturn")
             );
             return;
         }
@@ -182,15 +191,51 @@ public class RentalView extends VBox {
 
             UIUtil.showInfoAlert(
                     LanguageManager.getInstance().getString("info.success"),
-                    "Returned",
-                    "Total Cost: " + selected.getTotalCost()
+                    LanguageManager.getInstance().getString("info.returnedTitle"),
+                    LanguageManager.getInstance().getString("info.totalCost") + " " + selected.getTotalCost()
             );
 
             refreshData();
             if (onDataUpdate != null) onDataUpdate.run();
 
         } catch (Exception e) {
-            UIUtil.showErrorAlert("Error", "Return Failed", e.getMessage());
+            UIUtil.showErrorAlert(
+                    LanguageManager.getInstance().getString("error.genericTitle"),
+                    LanguageManager.getInstance().getString("error.returnFailedTitle"),
+                    e.getMessage()
+            );
+        }
+    }
+
+    // Helper Method to look up item names
+    private String resolveItemName(Rental rental) {
+        if (rental == null || rental.getRentalType() == null) return "Unknown";
+
+        Long id = rental.getRentalObjectId();
+        String type = rental.getRentalType().toString();
+
+        // Look up specific item based on type and ID
+        switch (type) {
+            case "VEHICLE":
+                return inventoryService.getAllVehicles().stream()
+                        .filter(vehicle -> vehicle.getId().equals(id))
+                        .map(vehicle -> vehicle.getMake() + " " + vehicle.getModel())
+                        .findFirst()
+                        .orElse("Unknown Vehicle (ID: " + id + ")");
+            case "GEAR":
+                return inventoryService.getAllGear().stream()
+                        .filter(gear -> gear.getId().equals(id))
+                        .map(Gear::getModel)
+                        .findFirst()
+                        .orElse("Unknown Gear (ID: " + id + ")");
+            case "TENT":
+                return inventoryService.getAllTents().stream()
+                        .filter(tent -> tent.getId().equals(id))
+                        .map(Tent::getModel)
+                        .findFirst()
+                        .orElse("Unknown Tent (ID: " + id + ")");
+            default:
+                return type + " (ID: " + id + ")";
         }
     }
 }

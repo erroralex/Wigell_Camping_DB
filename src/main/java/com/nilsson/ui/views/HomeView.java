@@ -15,6 +15,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.scene.text.TextAlignment;
 import org.kordamp.ikonli.fontawesome.FontAwesome;
 import org.kordamp.ikonli.javafx.FontIcon;
 
@@ -23,6 +24,11 @@ public class HomeView extends VBox {
     private final MemberService memberService;
     private final InventoryService inventoryService;
     private final RentalService rentalService;
+
+    private VBox memberCard;
+    private VBox vehicleCard;
+    private VBox gearCard;
+    private VBox rentalCard;
 
     public HomeView(ServiceContainer services) {
         this.memberService = services.getMemberService();
@@ -46,6 +52,13 @@ public class HomeView extends VBox {
 
         // Add everything to the view
         this.getChildren().addAll(logoView, welcomeBox, statsContainer);
+    }
+
+    public void setupNavActions(Runnable onMember, Runnable onVehicle, Runnable onGear, Runnable onRental) {
+        if (memberCard != null) memberCard.setOnMouseClicked(e -> onMember.run());
+        if (vehicleCard != null) vehicleCard.setOnMouseClicked(e -> onVehicle.run());
+        if (gearCard != null) gearCard.setOnMouseClicked(e -> onGear.run());
+        if (rentalCard != null) rentalCard.setOnMouseClicked(e -> onRental.run());
     }
 
     private ImageView loadLogo() {
@@ -72,7 +85,7 @@ public class HomeView extends VBox {
         Label welcomeTitle = new Label(LanguageManager.getInstance().getString("txt.welcome").split("\n")[0]); // Just the "Welcome" part
         welcomeTitle.getStyleClass().add("welcome-title");
 
-        Label subTitle = new Label("System Status & Overview");
+        Label subTitle = new Label(LanguageManager.getInstance().getString("txt.welcomeTitle"));
         subTitle.getStyleClass().add("welcome-subtitle");
 
         VBox box = new VBox(10, welcomeTitle, subTitle);
@@ -84,42 +97,42 @@ public class HomeView extends VBox {
         // Fetch data
         int memberCount = memberService.getAllMembers().size();
         int vehicleCount = inventoryService.getAllVehicles().size();
-        int gearCount = inventoryService.getAllGear().size();
+        int gearCount = inventoryService.getAllGear().size() + inventoryService.getAllTents().size();
 
         long activeRentals = rentalService.getAllRentals().stream()
                 .filter(rental -> rental.getEndTime() == null)
                 .count();
 
-        VBox memberCard = createStatCard(
-                LanguageManager.getInstance().getString("nav.members"),
+        this.memberCard = createStatCard(
+                LanguageManager.getInstance().getString("memberCard"),
                 String.valueOf(memberCount),
                 FontAwesome.USERS,
                 "card-blue",
-                "Manage registered members and view details" // <--- Tooltip Text
+                LanguageManager.getInstance().getString("tooltip.memberCard")
         );
 
-        VBox vehicleCard = createStatCard(
-                LanguageManager.getInstance().getString("nav.vehicles"),
+        this.vehicleCard = createStatCard(
+                LanguageManager.getInstance().getString("vehicleCard"),
                 String.valueOf(vehicleCount),
                 FontAwesome.TRUCK,
                 "card-green",
-                "View fleet status and add new vehicles" // <--- Tooltip Text
+                LanguageManager.getInstance().getString("tooltip.vehicleCard")
         );
 
-        VBox gearCard = createStatCard(
-                LanguageManager.getInstance().getString("nav.gear"),
+        this.gearCard = createStatCard(
+                LanguageManager.getInstance().getString("gearCard"),
                 String.valueOf(gearCount),
                 FontAwesome.WRENCH,
                 "card-orange",
-                "Check inventory for tents, chairs, and other equipment" // <--- Tooltip Text
+                LanguageManager.getInstance().getString("tooltip.gearCard")
         );
 
-        VBox rentalCard = createStatCard(
-                LanguageManager.getInstance().getString("nav.rentals"),
+        this.rentalCard = createStatCard(
+                LanguageManager.getInstance().getString("rentalCard"),
                 String.valueOf(activeRentals),
                 FontAwesome.CALENDAR_CHECK_O,
                 "card-red",
-                "See currently active rentals and returns" // <--- Tooltip Text
+                LanguageManager.getInstance().getString("tooltip.rentalCard")
         );
 
         HBox row = new HBox(20, memberCard, vehicleCard, gearCard, rentalCard);
@@ -141,12 +154,16 @@ public class HomeView extends VBox {
         Label titleLabel = new Label(title);
         titleLabel.getStyleClass().add("card-title");
 
+        // Wrapping
+        titleLabel.setWrapText(true);
+        titleLabel.setTextAlignment(TextAlignment.CENTER);
+
         // Container
         VBox card = new VBox(10, icon, valueLabel, titleLabel);
         card.setAlignment(Pos.CENTER);
         card.setPadding(new Insets(20));
         card.setPrefWidth(200);
-        card.setPrefHeight(180);
+        card.setMinHeight(180);
 
         // Add specific color class + generic card class
         card.getStyleClass().addAll("dashboard-card", colorClass);

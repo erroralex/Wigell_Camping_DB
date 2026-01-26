@@ -1,6 +1,6 @@
 package com.nilsson.ui.dialogs;
 
-import com.nilsson.ui.views.InventoryItemViewModel; // Make sure this import works
+import com.nilsson.ui.views.InventoryItemViewModel;
 import com.nilsson.util.LanguageManager;
 import com.nilsson.ui.UIUtil;
 import javafx.application.Platform;
@@ -16,17 +16,24 @@ public class AddGearDialog extends Dialog<InventoryItemViewModel> {
     private final TextField priceField = new TextField();
     private final ComboBox<String> typeBox = new ComboBox<>();
 
-    private static final String TENT = "Tent"; // This keyword determines if it's a Tent Entity
+    private static final String TENT = "Tent";
     private static final String GEAR = "Gear";
 
     public AddGearDialog() {
         setTitle(LanguageManager.getInstance().getString("txt.addGearTitle"));
         setHeaderText(LanguageManager.getInstance().getString("txt.addGearHeader"));
 
-        this.setOnShowing(dialogEvent -> UIUtil.applyDialogSetup(this));
+        // Apply theme and mouse-drag
+        this.setOnShowing(dialogEvent -> {
+            UIUtil.applyDialogSetup(this);
+        });
 
-        ButtonType addButtonType = new ButtonType(LanguageManager.getInstance().getString("btn.add"), ButtonBar.ButtonData.OK_DONE);
-        ButtonType cancelButtonType = new ButtonType(LanguageManager.getInstance().getString("btn.cancel"), ButtonBar.ButtonData.CANCEL_CLOSE);
+        ButtonType addButtonType = new ButtonType(LanguageManager.getInstance().getString("btn.add"),
+                ButtonBar.ButtonData.OK_DONE);
+
+        ButtonType cancelButtonType = new ButtonType(LanguageManager.getInstance().getString("btn.cancel"),
+                ButtonBar.ButtonData.CANCEL_CLOSE);
+
         getDialogPane().getButtonTypes().addAll(addButtonType, cancelButtonType);
 
         GridPane grid = new GridPane();
@@ -69,8 +76,8 @@ public class AddGearDialog extends Dialog<InventoryItemViewModel> {
                             capacityField.getText().trim(),
                             new BigDecimal(priceField.getText().trim()),
                             false,
-                            isTent, // FLag
-                            null    // No original entity yet
+                            isTent,
+                            null
                     );
                 } catch (Exception e) { return null; }
             }

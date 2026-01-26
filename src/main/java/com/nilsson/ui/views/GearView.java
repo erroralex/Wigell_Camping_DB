@@ -111,14 +111,14 @@ public class GearView extends VBox {
     private void loadMasterData() {
         masterData.clear();
 
-        // 1. Fetch Tents and map to ViewModel
+        // Fetch Tents and map to ViewModel
         for (Tent t : inventoryService.getAllTents()) {
             masterData.add(new InventoryItemViewModel(
                     t.getId(), t.getModel(), "Tent", t.getCapacity(), t.getCost(), t.isRented(), true, t
             ));
         }
 
-        // 2. Fetch Gear and map to ViewModel
+        // Fetch Gear and map to ViewModel
         for (Gear g : inventoryService.getAllGear()) {
             masterData.add(new InventoryItemViewModel(
                     g.getId(), g.getModel(), g.getType(), g.getCapacity(), g.getCost(), g.isRented(), false, g
@@ -131,14 +131,13 @@ public class GearView extends VBox {
     }
 
     private void handleAddGear() {
-        // Dialog now returns a ViewModel instead of an Entity
+        // Return a ViewModel instead of an Entity
         AddGearDialog dialog = new AddGearDialog();
         Optional<InventoryItemViewModel> result = dialog.showAndWait();
 
         if (result.isPresent()) {
             InventoryItemViewModel item = result.get();
 
-            // LOGIC: Check if user selected "Tent" or something else
             if (item.isTentEntity()) {
                 // Save as Tent Entity
                 Tent newTent = new Tent(item.getModel(), item.getCapacity(), item.getCost(), false);
@@ -162,20 +161,18 @@ public class GearView extends VBox {
                 InventoryItemViewModel updated = result.get();
 
                 if (selected.isTentEntity()) {
-                    // Update original Tent Entity
-                    Tent t = (Tent) selected.getOriginalEntity();
-                    t.setModel(updated.getModel());
-                    t.setCapacity(updated.getCapacity());
-                    t.setCost(updated.getCost());
-                    inventoryService.updateTent(t);
+                    Tent tent = (Tent) selected.getOriginalEntity();
+                    tent.setModel(updated.getModel());
+                    tent.setCapacity(updated.getCapacity());
+                    tent.setCost(updated.getCost());
+                    inventoryService.updateTent(tent);
                 } else {
-                    // Update original Gear Entity
-                    Gear g = (Gear) selected.getOriginalEntity();
-                    g.setModel(updated.getModel());
-                    g.setType(updated.getType());
-                    g.setCapacity(updated.getCapacity());
-                    g.setCost(updated.getCost());
-                    inventoryService.updateGear(g);
+                    Gear gear = (Gear) selected.getOriginalEntity();
+                    gear.setModel(updated.getModel());
+                    gear.setType(updated.getType());
+                    gear.setCapacity(updated.getCapacity());
+                    gear.setCost(updated.getCost());
+                    inventoryService.updateGear(gear);
                 }
                 loadMasterData();
             }
@@ -190,7 +187,7 @@ public class GearView extends VBox {
             boolean confirm = UIUtil.showConfirmationAlert(
                     LanguageManager.getInstance().getString("confirm.removal"),
                     null,
-                    "Delete " + selected.getModel() + "?"
+                    LanguageManager.getInstance().getString("txt.delete") + selected.getModel() + "?"
             );
 
             if (confirm) {

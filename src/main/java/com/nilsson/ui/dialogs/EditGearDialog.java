@@ -22,10 +22,17 @@ public class EditGearDialog extends Dialog<InventoryItemViewModel> {
         setTitle("Edit Item");
         setHeaderText("Edit details for " + item.getModel());
 
-        this.setOnShowing(dialogEvent -> UIUtil.applyDialogSetup(this));
+        // Apply theme and mouse-drag
+        this.setOnShowing(dialogEvent -> {
+            UIUtil.applyDialogSetup(this);
+        });
 
-        ButtonType saveButtonType = new ButtonType(LanguageManager.getInstance().getString("btn.save"), ButtonBar.ButtonData.OK_DONE);
-        ButtonType cancelButtonType = new ButtonType(LanguageManager.getInstance().getString("btn.cancel"), ButtonBar.ButtonData.CANCEL_CLOSE);
+        ButtonType saveButtonType = new ButtonType(LanguageManager.getInstance().getString("btn.save"),
+                ButtonBar.ButtonData.OK_DONE);
+
+        ButtonType cancelButtonType = new ButtonType(LanguageManager.getInstance().getString("btn.cancel"),
+                ButtonBar.ButtonData.CANCEL_CLOSE);
+
         getDialogPane().getButtonTypes().addAll(saveButtonType, cancelButtonType);
 
         GridPane grid = new GridPane();
@@ -33,7 +40,6 @@ public class EditGearDialog extends Dialog<InventoryItemViewModel> {
         grid.setVgap(20);
         grid.setPadding(new Insets(20,20,10,10));
 
-        // Pre-fill fields
         modelField.setText(item.getModel());
         capacityField.setText(item.getCapacity());
         priceField.setText(String.valueOf(item.getCost()));
@@ -41,10 +47,8 @@ public class EditGearDialog extends Dialog<InventoryItemViewModel> {
         typeBox.getItems().addAll("Tent", "Backpack", "Other");
         typeBox.setValue(item.getType());
 
-        // If it is a Tent entity, you might want to disable changing type to "Backpack"
-        // because you can't easily change a DB Entity from Tent to Gear.
         if (item.isTentEntity()) {
-            typeBox.setDisable(true); // Lock type if it's already a Tent
+            typeBox.setDisable(true);
         }
 
         grid.add(new Label("Model:"), 0, 0);
