@@ -177,6 +177,19 @@ public class SideNavigation extends VBox {
         inventorySubMenu.setVisible(false);
         inventorySubMenu.setManaged(false);
 
+        homeView.setupNavActions(
+                btnMembers::fire, // On Member Card Click
+                () -> {           // On Vehicle Card Click
+                    ensureInventoryExpanded();
+                    btnVehicle.fire();
+                },
+                () -> {           // On Gear Card Click
+                    ensureInventoryExpanded();
+                    btnGear.fire();
+                },
+                btnRentals::fire  // On Rental Card Click
+        );
+
         // ──────────────────────────────────────────────────────
         // Spacer for Bottom Alignment
         // ──────────────────────────────────────────────────────
@@ -229,6 +242,10 @@ public class SideNavigation extends VBox {
 
         // Set initial active button
         setActiveButton(btnHome);
+    }
+
+    public HomeView getHomeView() {
+        return this.homeView;
     }
 
     // ──────────────────────────────────────────────────────
@@ -325,6 +342,16 @@ public class SideNavigation extends VBox {
                     this.inventoryToggleIcon.setIconLiteral(FontAwesome.ANGLE_RIGHT.getDescription());
                 }
             }
+        }
+    }
+
+    // Helper to auto-expand submenu when clicking Home cards
+    private void ensureInventoryExpanded() {
+        if (!inventorySubMenu.isVisible()) {
+            inventorySubMenu.setVisible(true);
+            inventorySubMenu.setManaged(true);
+            this.inventoryToggleIcon.setIconLiteral(FontAwesome.ANGLE_DOWN.getDescription());
+            btnInventory.getStyleClass().add("nav-button-toggle-active");
         }
     }
 }

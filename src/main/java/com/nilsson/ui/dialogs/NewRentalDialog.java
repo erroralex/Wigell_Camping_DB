@@ -5,13 +5,17 @@ import com.nilsson.model.NewRentalResult;
 import com.nilsson.repo.MemberRepositoryImpl;
 import com.nilsson.service.InventoryService;
 import com.nilsson.service.MemberService;
+import com.nilsson.ui.RootLayout;
+import com.nilsson.ui.ServiceContainer;
 import com.nilsson.ui.UIUtil;
 import com.nilsson.util.HibernateUtil;
 import com.nilsson.util.LanguageManager;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
+import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Priority;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -33,23 +37,37 @@ public class NewRentalDialog extends Dialog<NewRentalResult> {
 
     private final DatePicker startDatePicker = new DatePicker(LocalDate.now());
 
-    public NewRentalDialog(MemberService memberService, InventoryService inventoryService) {
-        this.memberService = memberService;
-        this.inventoryService = inventoryService;
+    public NewRentalDialog(ServiceContainer service) {
+        this.memberService = service.getMemberService();
+        this.inventoryService = service.getInventoryService();
 
         setTitle(LanguageManager.getInstance().getString("txt.newRentalTitle"));
         setHeaderText(LanguageManager.getInstance().getString("txt.newRentalHeader"));
 
+        this.setOnShowing(dialogEvent -> UIUtil.applyDialogSetup(this));
+
         // Setup Buttons
-        ButtonType createBtnType = new ButtonType(LanguageManager.getInstance().getString("btn.createRental"), ButtonBar.ButtonData.OK_DONE);
+        ButtonType createBtnType = new ButtonType(LanguageManager.getInstance().getString("btn.createRental"),
+                ButtonBar.ButtonData.OK_DONE);
+
         getDialogPane().getButtonTypes().addAll(createBtnType, ButtonType.CANCEL);
 
         GridPane grid = new GridPane();
         grid.setHgap(10);
         grid.setVgap(10);
-        grid.setPadding(new Insets(20, 150, 10, 10));
+        grid.setPadding(new Insets(20, 20, 10, 10));
 
-        // 1. Member Selection
+        ColumnConstraints labelCol = new ColumnConstraints();
+        labelCol.setHgrow(Priority.NEVER);
+        labelCol.setMinWidth(150);
+
+        ColumnConstraints fieldCol = new ColumnConstraints();
+        fieldCol.setHgrow(Priority.ALWAYS);
+        fieldCol.setFillWidth(true);
+
+        grid.getColumnConstraints().addAll(labelCol, fieldCol);
+
+        // Member Selection
         memberBox.setPromptText(LanguageManager.getInstance().getString("txt.selectMember"));
         memberBox.getItems().addAll(memberService.getAllMembers());
         // Custom Cell Factory to show Name + ID
@@ -61,16 +79,23 @@ public class NewRentalDialog extends Dialog<NewRentalResult> {
                 else setText(item.getFirstName() + " " + item.getLastName() + " (ID: " + item.getId() + ")");
             }
         });
-        memberBox.setButtonCell(memberBox.getCellFactory().call(null)); // Apply to selected view
+        memberBox.setButtonCell(memberBox.getCellFactory().call(null));
 
-        // 2. Type Selection (Use the Enum directly)
+        // Type Selection
         itemTypeBox.getItems().setAll(RentalType.values());
-        itemTypeBox.setValue(RentalType.GEAR); // Default
+        itemTypeBox.setValue(RentalType.GEAR);
 
-        // 3. Load Available Items
+        // Load Available Items
         loadAvailableItems();
 
-        // 4. Layout
+        memberBox.setMaxWidth(Double.MAX_VALUE);
+        itemTypeBox.setMaxWidth(Double.MAX_VALUE);
+        gearBox.setMaxWidth(Double.MAX_VALUE);
+        vehicleBox.setMaxWidth(Double.MAX_VALUE);
+        tentBox.setMaxWidth(Double.MAX_VALUE);
+        startDatePicker.setMaxWidth(Double.MAX_VALUE);
+
+        // Layout
         grid.add(new Label(LanguageManager.getInstance().getString("table.member")), 0, 0);
         grid.add(memberBox, 1, 0);
 
@@ -88,9 +113,9 @@ public class NewRentalDialog extends Dialog<NewRentalResult> {
 
         getDialogPane().setContent(grid);
 
-        // 5. Logic
-        configureItemBoxes(); // Helper to set cell factories
-        updateVisibility();   // Initial visibility check
+        // Logic
+        configureItemBoxes();
+        updateVisibility();
 
         itemTypeBox.valueProperty().addListener((obs, oldV, newV) -> updateVisibility());
 
@@ -103,7 +128,7 @@ public class NewRentalDialog extends Dialog<NewRentalResult> {
 
         Platform.runLater(memberBox::requestFocus);
 
-        // 6. Convert Result
+        // Convert Result
         setResultConverter(dialogButton -> {
             if (dialogButton == createBtnType) {
                 return buildResult();
@@ -173,19 +198,17 @@ public class NewRentalDialog extends Dialog<NewRentalResult> {
         else if (type == RentalType.TENT) selectedItem = tentBox.getValue();
 
         if (selectedItem == null) {
-            UIUtil.showErrorAlert("Validation Error", "No Item Selected", "Please select an item to rent.");
+            UIUtil.showErrorAlert(
+                    LanguageManager.getInstance().getString("error.input"),
+                    LanguageManager.getInstance().getString("error.noItemSelected"),
+                    LanguageManager.getInstance().getString("error.pleaseSelectItem")
+            );
             return null;
         }
-
-        // Logic: Combine the selected Date with Current Time
-        // If date is today -> Use LocalTime.now()
-        // If date is past -> Use Start of day (00:00) or Noon? Let's use Noon to be safe, or 12:00.
-        // Best practice for "Check Out" is usually NOW.
 
         LocalDate selectedDate = startDatePicker.getValue();
         LocalTime timePart = LocalTime.now();
 
-        // If the admin backdates to yesterday, we probably want 08:00 or something, but keeping current time is usually fine for calculation
         LocalDateTime startDateTime = LocalDateTime.of(selectedDate, timePart);
 
         return new NewRentalResult(member, selectedItem, type, startDateTime);

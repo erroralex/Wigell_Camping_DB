@@ -35,6 +35,7 @@ public class EditMemberDialog extends Dialog<Member> {
 
         ButtonType saveButtonType = new ButtonType(LanguageManager.getInstance().getString("btn.save"),
                 ButtonBar.ButtonData.OK_DONE);
+
         ButtonType cancelButtonType = new ButtonType(LanguageManager.getInstance().getString("btn.cancel"),
                 ButtonBar.ButtonData.CANCEL_CLOSE);
 

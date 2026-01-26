@@ -44,11 +44,11 @@ public class RootLayout extends BorderPane {
         currentThemeUrl = getClass().getResource(DARK_THEME_CSS).toExternalForm();
 
         // Initialize Side Navigation
-        refreshSideNavigation();
-        setContent(new HomeView(services));
+        SideNavigation sideNav = refreshSideNavigation();
+        setContent(sideNav.getHomeView());
     }
 
-    public void refreshSideNavigation() {
+    public SideNavigation refreshSideNavigation() {
         SideNavigation sideNav = new SideNavigation(
                 this,
                 this.stage,
@@ -59,6 +59,8 @@ public class RootLayout extends BorderPane {
 
         this.setLeft(sideNav);
         sideNav.setPrefWidth(250);
+
+        return sideNav;
     }
 
     public void setContent(Node view) {
@@ -67,7 +69,6 @@ public class RootLayout extends BorderPane {
 
     public boolean toggleTheme() {
         if (this.getScene() == null) {
-            System.err.println("Cannot toggle theme: Scene is null.");
             return isDarkTheme;
         }
 

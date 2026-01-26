@@ -7,7 +7,6 @@ import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
-
 import java.math.BigDecimal;
 
 public class EditVehicleDialog extends Dialog<Vehicle> {
@@ -40,6 +39,7 @@ public class EditVehicleDialog extends Dialog<Vehicle> {
 
         ButtonType saveButtonType = new ButtonType(LanguageManager.getInstance().getString("btn.save"),
                 ButtonBar.ButtonData.OK_DONE);
+
         ButtonType cancelButtonType = new ButtonType(LanguageManager.getInstance().getString("btn.cancel"),
                 ButtonBar.ButtonData.CANCEL_CLOSE);
 

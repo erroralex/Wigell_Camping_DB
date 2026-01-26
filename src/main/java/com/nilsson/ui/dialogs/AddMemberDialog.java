@@ -30,8 +30,10 @@ public class AddMemberDialog extends Dialog<Member> {
 
         ButtonType addButtonType = new ButtonType(LanguageManager.getInstance().getString("btn.add"),
                 ButtonBar.ButtonData.OK_DONE);
+
         ButtonType cancelButtonType = new ButtonType(LanguageManager.getInstance().getString("btn.cancel"),
                 ButtonBar.ButtonData.CANCEL_CLOSE);
+
         getDialogPane().getButtonTypes().addAll(addButtonType, cancelButtonType);
 
         // Form Layout

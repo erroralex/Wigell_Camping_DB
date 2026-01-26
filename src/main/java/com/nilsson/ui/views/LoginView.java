@@ -1,6 +1,7 @@
 package com.nilsson.ui.views;
 
 import com.nilsson.service.AuthService;
+import com.nilsson.util.LanguageManager;
 import com.nilsson.util.UserSession;
 import com.nilsson.ui.CustomTitleBar;
 import com.nilsson.ui.RootLayout;
@@ -59,30 +60,30 @@ public class LoginView extends VBox {
             logo.setGraphic(logoImageView);
         } else {
             // Fallback text if image fails to load
-            logo.setText("Wigell Camping");
+            logo.setText(LanguageManager.getInstance().getString("app.title"));
         }
 
         // Text Fields
         TextField usernameField = new TextField();
-        usernameField.setPromptText("Username (e.g., admin)");
+        usernameField.setPromptText(LanguageManager.getInstance().getString("prompt.username"));
         PasswordField passwordField = new PasswordField();
-        passwordField.setPromptText("Password: (Use '0000')");
+        passwordField.setPromptText(LanguageManager.getInstance().getString("prompt.password"));
 
         // Wrap inputs with icons in containers
         HBox usernameContainer = createInputContainer(usernameField, FontAwesome.USER);
         HBox passwordContainer = createInputContainer(passwordField, FontAwesome.LOCK);
 
         // Login Button
-        Button loginButton = new Button("Login");
+        Button loginButton = new Button(LanguageManager.getInstance().getString("btn.login"));
         loginButton.getStyleClass().add("login-button");
-        loginButton.setMaxWidth(100);
+        loginButton.setMaxWidth(150);
         loginButton.setDefaultButton(true);
         loginButton.setGraphic(new FontIcon(FontAwesome.SIGN_IN));
 
         // Exit Button
-        Button exitButton = new Button("Exit");
+        Button exitButton = new Button(LanguageManager.getInstance().getString("btn.exit"));
         exitButton.getStyleClass().add("exit-button");
-        exitButton.setMaxWidth(100);
+        exitButton.setMaxWidth(150);
         exitButton.setOnAction(e -> {
             // Perform UserSession cleanup before closing
             UserSession.logout();
@@ -149,10 +150,14 @@ public class LoginView extends VBox {
                     }
 
                     primaryStage.getScene().setRoot(rootLayout);
-                    primaryStage.setTitle("Wigell Camping - Home");
+                    primaryStage.setTitle(LanguageManager.getInstance().getString("app.title"));
                 }
             } else {
-                UIUtil.showErrorAlert("Login Failed", null, "Incorrect password. Please use '0000'.");
+                UIUtil.showErrorAlert(
+                        LanguageManager.getInstance().getString("error.loginFailedTitle"),
+                        null,
+                        LanguageManager.getInstance().getString("error.loginFailedMsg")
+                );
             }
         });
     }

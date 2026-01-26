@@ -35,6 +35,7 @@ public class AddVehicleDialog extends Dialog<Vehicle> {
 
         ButtonType addButtonType = new ButtonType(LanguageManager.getInstance().getString("btn.add"),
                 ButtonBar.ButtonData.OK_DONE);
+
         ButtonType cancelButtonType = new ButtonType(LanguageManager.getInstance().getString("btn.cancel"),
                 ButtonBar.ButtonData.CANCEL_CLOSE);
 
@@ -100,7 +101,6 @@ public class AddVehicleDialog extends Dialog<Vehicle> {
                             false
                     );
                 } catch (NumberFormatException e) {
-                    // Simple error handling for now
                     System.err.println("Invalid price format");
                     return null;
                 }
