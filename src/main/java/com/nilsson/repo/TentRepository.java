@@ -10,4 +10,5 @@ public interface TentRepository {
     void addTent(Tent tent);
     void updateTent(Tent tent);
     void deleteTent(Tent tent);
+    List<Tent> findByIsRentedFalse();
 }

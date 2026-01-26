@@ -25,18 +25,17 @@ public final class HibernateUtil {
     private static SessionFactory buildSessionFactory() {
         try {
             Configuration configuration = new Configuration();
-            // Load properties from file manually or let Hibernate find hibernate.properties automatically
-            // The testDemo code loads it manually via stream, which is safer:
             Properties props = new Properties();
             props.load(HibernateUtil.class.getClassLoader().getResourceAsStream("hibernate.properties"));
             configuration.setProperties(props);
 
-            // REGISTER YOUR ENTITIES HERE
+            // Entities
             configuration.addAnnotatedClass(Member.class);
             configuration.addAnnotatedClass(Rental.class);
             configuration.addAnnotatedClass(Vehicle.class);
             configuration.addAnnotatedClass(Gear.class);
             configuration.addAnnotatedClass(Tent.class);
+            configuration.addAnnotatedClass(DailyProfit.class);
 
             ServiceRegistry serviceRegistry = new StandardServiceRegistryBuilder()
                     .applySettings(configuration.getProperties()).build();

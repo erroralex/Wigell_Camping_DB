@@ -30,25 +30,34 @@ public class SideNavigation extends VBox {
 
     private final ProfitsView profitsView;
     private final RentalView rentalView;
-    private final HomeView homeView = new HomeView();
-    private final MemberView memberView = new MemberView();
-    private final VehicleView vehicleView = new VehicleView();
-    private final GearView gearView = new GearView();
+    private final HomeView homeView;
+    private final MemberView memberView;
+    private final VehicleView vehicleView;
+    private final GearView gearView;
 
 
-    public SideNavigation(RootLayout rootLayout, Stage primaryStage, Runnable onLogout, Runnable onLanguageChange) {
+    public SideNavigation(RootLayout rootLayout,
+                          Stage primaryStage,
+                          Runnable onLogout,
+                          Runnable onLanguageChange,
+                          ServiceContainer services) {
+
         this.rootLayout = rootLayout;
         this.primaryStage = primaryStage;
         this.onLogout = onLogout;
         this.onLanguageChange = onLanguageChange;
-
-        // Initialize ProfitsView
         this.profitsView = new ProfitsView();
 
-        // Initialize RentalView, passing the update method from ProfitsView
-        // This is valid now that ProfitsView has a public updateView() method.
-        this.rentalView = new RentalView(this.profitsView::updateView);
+        this.homeView = new HomeView(services);
 
+        this.rentalView = new RentalView(
+                services,
+                this.profitsView::updateView
+        );
+
+        this.vehicleView = new VehicleView(services.getInventoryService());
+        this.gearView = new GearView(services.getInventoryService());
+        this.memberView = new MemberView(services.getMemberService());
 
         // Apply CSS class for the side navigation container
         this.getStyleClass().add("side-navigation");

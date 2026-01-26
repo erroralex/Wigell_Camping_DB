@@ -1,5 +1,6 @@
 package com.nilsson.ui.dialogs;
 
+import com.nilsson.entity.MembershipLevel;
 import com.nilsson.util.LanguageManager;
 import com.nilsson.entity.Member;
 import com.nilsson.ui.UIUtil;
@@ -79,12 +80,12 @@ public class AddMemberDialog extends Dialog<Member> {
 
         setResultConverter(dialogButton -> {
             if (dialogButton == addButtonType) {
+                String levelString = levelBox.getValue().toUpperCase();
+                MembershipLevel level = MembershipLevel.valueOf(levelString);
                 return new Member(
-                        0, // ID 0 triggers Auto-Increment
                         firstNameField.getText().trim(),
                         lastNameField.getText().trim(),
-                        levelBox.getValue(),
-                        null
+                        level
                 );
             }
             // If Cancel is clicked

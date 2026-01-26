@@ -60,7 +60,7 @@ public class CustomTitleBar extends HBox {
         HBox rightSpacer = new HBox();
         HBox.setHgrow(rightSpacer, Priority.ALWAYS);
 
-        // --- Window Controls ---
+        // Window Controls
         Button minimizeBtn = new Button();
         minimizeBtn.setGraphic(new FontIcon(FontAwesome.MINUS));
         minimizeBtn.getStyleClass().add("window-button");
@@ -84,7 +84,7 @@ public class CustomTitleBar extends HBox {
         // Add components: Title | Left Spacer | Timer | Right Spacer | Controls
         this.getChildren().addAll(titleLabel, leftSpacer, timerContainer, rightSpacer, minimizeBtn, maximizeBtn, closeBtn);
 
-        // --- Dragging Logic ---
+        // Dragging Logic
         this.setOnMousePressed(event -> {
             if (event.getButton() == MouseButton.PRIMARY) {
                 xOffset = event.getSceneX();
@@ -160,7 +160,7 @@ public class CustomTitleBar extends HBox {
         boolean nearLeft = cursorX <= minX + SNAP_THRESHOLD;
         boolean nearRight = cursorX >= maxX - SNAP_THRESHOLD;
 
-        // --- CORNER SNAPPING (Quarter) ---
+        // CORNER SNAPPING (Quarter)
         if (nearTop && nearLeft) {
             // Top-Left Quarter
             snapWindow(stage, maxBtn, minX, minY, width / 2, height / 2);
@@ -175,7 +175,7 @@ public class CustomTitleBar extends HBox {
             snapWindow(stage, maxBtn, minX + width / 2, minY + height / 2, width / 2, height / 2);
         }
 
-        // --- EDGE SNAPPING (Half & Maximize) ---
+        // EDGE SNAPPING (Half & Maximize)
         else if (nearTop) {
             // Full Screen (Maximize)
             if (!stage.isMaximized()) {

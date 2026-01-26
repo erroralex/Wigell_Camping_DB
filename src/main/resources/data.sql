@@ -1,160 +1,170 @@
-USE wigell_camping_members_club;
-
 -- ==========================================
--- CLEAR DATA & RESET AUTO-INCREMENTS
--- ==========================================
-SET FOREIGN_KEY_CHECKS = 0;
-
-TRUNCATE TABLE rentals;
-TRUNCATE TABLE profits;
-TRUNCATE TABLE gear;
-TRUNCATE TABLE vehicles;
-TRUNCATE TABLE member_history;
-TRUNCATE TABLE members;
-
--- Ensure all IDs start at 1
-ALTER TABLE members
-    AUTO_INCREMENT = 1;
-ALTER TABLE vehicles
-    AUTO_INCREMENT = 1;
-ALTER TABLE gear
-    AUTO_INCREMENT = 1;
-ALTER TABLE rentals
-    AUTO_INCREMENT = 1;
-ALTER TABLE member_history
-    AUTO_INCREMENT = 1;
-ALTER TABLE profits
-    AUTO_INCREMENT = 1;
-
-SET FOREIGN_KEY_CHECKS = 1;
-
--- ==========================================
--- 1. MEMBERS (IDs will be 1 - 20)
+-- 1. MEMBERS
 -- ==========================================
 INSERT INTO members (first_name, last_name, level, entered_date)
-VALUES ('Felix', 'Kjellberg', 'Premium', '2025-11-01'),      -- ID: 1
-       ('Tomas', 'Wigell', 'Premium', '2025-10-15'),         -- ID: 2
-       ('Stellan', 'Skarsgård', 'Student', '2025-11-20'),    -- ID: 3
-       ('Kevin', 'Costner', 'Premium', '2025-12-01'),        -- ID: 4
-       ('Sarah', 'Sjöström', 'Premium', '2025-09-01'),       -- ID: 5
-       ('Peter', 'Forsberg', 'Standard', '2025-11-05'),      -- ID: 6
-       ('Malin', 'Åkerman', 'Standard', '2025-12-10'),       -- ID: 7
-       ('Kurt', 'Olsson', 'Standard', '2025-11-15'),         -- ID: 8
-       ('Carola', 'Häggkvist', 'Standard', '2025-10-30'),    -- ID: 9
-       ('Robyn', 'Carlsson', 'Premium', '2025-11-01'),       -- ID: 10
-       ('Mia', 'Parnevik', 'Student', '2025-12-01'),         -- ID: 11
-       ('Noel', 'Floren', 'Standard', '2025-11-12'),         -- ID: 12
-       ('Markoolio', 'Lehtosalo', 'Premium', '2025-10-05'),  -- ID: 13
-       ('Joel', 'Kinnaman', 'Student', '2025-11-25'),        -- ID: 14
-       ('Zlatan', 'Ibrahimović', 'Premium', '2025-09-15'),   -- ID: 15
-       ('Mikael', 'Persbrandt', 'Premium', '2025-10-20'),    -- ID: 16
-       ('Danny', 'Saucedo', 'Student', '2025-12-05'),        -- ID: 17
-       ('Viktoria', 'Bernadotte', 'Standard', '2025-08-01'), -- ID: 18
-       ('Björn', 'Skifs', 'Student', '2025-11-11'),          -- ID: 19
-       ('Avicii', 'Bergling', 'Premium', '2025-10-10');      -- ID: 20
+VALUES ('Felix', 'Kjellberg', 'PREMIUM', '2025-08-01'),
+       ('Tomas', 'Wigell', 'PREMIUM', '2025-08-05'),
+       ('Stellan', 'Skarsgård', 'STUDENT', '2025-08-10'),
+       ('Kevin', 'Costner', 'PREMIUM', '2025-08-12'),
+       ('Sarah', 'Sjöström', 'PREMIUM', '2025-08-15'),
+       ('Peter', 'Forsberg', 'STANDARD', '2025-08-20'),
+       ('Malin', 'Åkerman', 'STANDARD', '2025-09-01'),
+       ('Kurt', 'Olsson', 'STANDARD', '2025-09-05'),
+       ('Carola', 'Häggkvist', 'STANDARD', '2025-09-10'),
+       ('Robyn', 'Carlsson', 'PREMIUM', '2025-09-15'),
+       ('Mia', 'Parnevik', 'STUDENT', '2025-09-20'),
+       ('Noel', 'Floren', 'STANDARD', '2025-10-01'),
+       ('Markoolio', 'Lehtosalo', 'PREMIUM', '2025-10-05'),
+       ('Joel', 'Kinnaman', 'STUDENT', '2025-10-10'),
+       ('Zlatan', 'Ibrahimović', 'PREMIUM', '2025-10-15'),
+       ('Mikael', 'Persbrandt', 'PREMIUM', '2025-10-20'),
+       ('Danny', 'Saucedo', 'STUDENT', '2025-11-01'),
+       ('Viktoria', 'Bernadotte', 'STANDARD', '2025-11-05'),
+       ('Björn', 'Skifs', 'STUDENT', '2025-11-10'),
+       ('Avicii', 'Bergling', 'PREMIUM', '2025-11-15');
 
 -- ==========================================
--- 2. VEHICLES (IDs will be 1 - 16)
+-- 2. VEHICLES
 -- ==========================================
 INSERT INTO vehicles (make, model, year, type, capacity, cost, is_rented)
-VALUES ('Ford', 'E-Series RV', '2019', 'Motorhome', '8', 1223.00, 0),           -- ID: 1
-       ('Hobby', 'De Luxe 545', '2020', 'Caravan', '4', 752.00, 0),             -- ID: 2
-       ('Mercedes-Benz', 'Sprinter Van', '2022', 'Campervan', '2', 1500.00, 1), -- ID: 3
-       ('Kabe', 'Estate 630', '2019', 'Caravan', '3', 600.00, 0),               -- ID: 4
-       ('Fiat', 'Ducato 4x4', '2021', 'Campervan', '4', 1350.00, 0),            -- ID: 5
-       ('Citroën', 'Jumper RV', '2017', 'Motorhome', '4', 1050.00, 0),          -- ID: 6
-       ('Polar', 'Edition 590', '2019', 'Caravan', '5', 820.00, 0),             -- ID: 7
-       ('Polar', 'Mini Caravan', '2020', 'Caravan', '2', 550.00, 0),            -- ID: 8
-       ('Fendt', 'Opal 560', '2022', 'Caravan', '5', 950.00, 1),                -- ID: 9
-       ('Dethleffs', 'Globetrotter', '2024', 'Motorhome', '6', 2100.00, 0),     -- ID: 10
-       ('Eriba', 'Touring 310', '2021', 'Caravan', '3', 700.00, 0),             -- ID: 11
-       ('Peugeot', 'Boxer Vanlife', '2020', 'Campervan', '2', 1150.00, 0),      -- ID: 12
-       ('Chausson', 'Welcome 747', '2018', 'Motorhome', '7', 1650.00, 0),       -- ID: 13
-       ('Bürstner', 'Premio Life 420', '2023', 'Caravan', '4', 650.00, 0),      -- ID: 14
-       ('Renault', 'Master Camper', '2019', 'Campervan', '3', 980.00, 0),       -- ID: 15
-       ('Niesmann+Bischoff', 'Arto 77E', '2024', 'Motorhome', '4', 2500.00, 0); -- ID: 16
+VALUES ('Hymer', 'Grand Canyon S', '2024', 'Campervan', '4', 1850.00, true),
+       ('Volkswagen', 'California Ocean', '2023', 'Campervan', '4', 1600.00, false),
+       ('Concorde', 'Liner 1090', '2022', 'Motorhome', '6', 4500.00, true),
+       ('Kabe', 'Imperial 1000', '2023', 'Caravan', '8', 1200.00, false),
+       ('Mercedes', 'Marco Polo', '2024', 'Campervan', '2', 1750.00, false),
+       ('Adria', 'Supersonic 780', '2023', 'Motorhome', '5', 2200.00, false),
+       ('Airstream', 'Flying Cloud', '2020', 'Caravan', '4', 1500.00, true),
+       ('Winnebago', 'Ekko', '2022', 'Motorhome', '4', 2100.00, false),
+       ('Tesla', 'Cybertruck + Basecamp', '2024', 'Campervan', '2', 3000.00, false),
+       ('Scania', 'Expedition Truck', '2021', 'Motorhome', '6', 3500.00, false),
+       ('Polar', 'Blackline 730', '2022', 'Caravan', '5', 950.00, false),
+       ('Hobby', 'Beachy 450', '2023', 'Caravan', '3', 600.00, false),
+       ('Ford', 'Nugget Plus', '2023', 'Campervan', '4', 1400.00, false),
+       ('Morelo', 'Palace 88', '2020', 'Motorhome', '4', 3800.00, false),
+       ('Volvo', 'Valp Overlander', '1980', 'Campervan', '2', 800.00, false);
 
 -- ==========================================
--- 3. GEAR (IDs will be 1 - 10)
+-- 3. GEAR
 -- ==========================================
 INSERT INTO gear (model, type, capacity, cost, is_rented)
-VALUES ('Outdoor Grill Set', 'Other Gear', 'N/A', 110.00, 0),      -- ID: 1
-       ('Arctic Shield 4S', 'Tent', '4 People', 450.00, 1),        -- ID: 2
-       ('Junior Hiker 15L', 'Backpack', '15L', 33.00, 0),          -- ID: 3
-       ('Expedition 110L', 'Backpack', '110L', 150.00, 0),         -- ID: 4
-       ('Portable Gas Stove', 'Other Gear', 'N/A', 25.00, 1),      -- ID: 5
-       ('Double Hammock Pro', 'Other Gear', '2 People', 45.00, 0), -- ID: 6
-       ('Solar Lantern', 'Other Gear', 'N/A', 15.00, 0),           -- ID: 7
-       ('Water Filter', 'Other Gear', '1000L', 35.00, 0),          -- ID: 8
-       ('Sleeping Bag -20C', 'Other Gear', '1 Person', 60.00, 0),  -- ID: 9
-       ('Camelback 3000', 'Other Gear', '3L', 25.00, 0);
--- ID: 10
+VALUES ('Weber Traveler', 'Gear', 'N/A', 150.00, false),
+       ('Osprey Aether 65', 'Gear', '65L', 80.00, false),
+       ('Jackery Explorer 1000', 'Gear', '1000W', 250.00, true),
+       ('Garmin GPSMAP 66i', 'Gear', 'N/A', 100.00, false),
+       ('Scott Strike eRIDE', 'Gear', 'N/A', 650.00, true),
+       ('Scott Strike eRIDE', 'Gear', 'N/A', 650.00, true),
+       ('Ooni Karu 12', 'Gear', 'N/A', 200.00, false),
+       ('Starlink Roam', 'Gear', 'Unlimited', 300.00, false),
+       ('Yeti Tundra 45', 'Gear', '45L', 120.00, false),
+       ('Thule Hull-a-Port', 'Gear', '2 Kayaks', 150.00, false),
+       ('Advanced Elements', 'Gear', '2 People', 350.00, false),
+       ('GoPro Hero 12', 'Gear', 'N/A', 150.00, false);
 
 -- ==========================================
--- 4. RENTALS (IDs 1-6)
--- FKs updated to match new IDs from above
+-- 4. TENTS
 -- ==========================================
-
--- Member: Mikael (Now ID 16) | Item: Ford RV (Now ID 1)
-INSERT INTO rentals (member_id, item_id, item_type, rental_date, return_date, rental_days, total_cost)
-VALUES (16, 1, 'VEHICLE', '2026-01-05', '2026-01-12', 7, 8561.00);
-
--- Member: Peter (Now ID 6) | Item: Tent (Now ID 2)
-INSERT INTO rentals (member_id, item_id, item_type, rental_date, return_date, rental_days, total_cost)
-VALUES (6, 2, 'GEAR', '2026-01-06', '2026-01-09', 3, 1350.00);
-
--- Member: Mia (Now ID 11) | Item: Sprinter (Now ID 3)
-INSERT INTO rentals (member_id, item_id, item_type, rental_date, return_date, rental_days, total_cost)
-VALUES (11, 3, 'VEHICLE', '2026-01-10', '2026-01-24', 14, 21000.00);
-
--- Member: Stellan (Now ID 3) | Item: Gas Stove (Now ID 5)
-INSERT INTO rentals (member_id, item_id, item_type, rental_date, return_date, rental_days, total_cost)
-VALUES (3, 5, 'GEAR', '2026-01-12', '2026-01-14', 2, 50.00);
-
--- Member: Zlatan (Now ID 15) | Item: Niesmann RV (Now ID 16)
-INSERT INTO rentals (member_id, item_id, item_type, rental_date, return_date, rental_days, total_cost)
-VALUES (15, 16, 'VEHICLE', '2026-01-15', '2026-02-14', 30, 75000.00);
-
--- Member: Malin (Now ID 7) | Item: Fendt Caravan (Now ID 9)
-INSERT INTO rentals (member_id, item_id, item_type, rental_date, return_date, rental_days, total_cost)
-VALUES (7, 9, 'VEHICLE', '2026-01-20', '2026-01-27', 7, 6650.00);
-
+INSERT INTO tents (model, capacity, cost, is_rented)
+VALUES ('Thule Tepui Explorer', '3 People (Roof)', 600.00, true),
+       ('Nordisk Asgard 12.6', '6 People (Glamping)', 900.00, false),
+       ('Hilleberg Keron 4 GT', '4 People', 1100.00, true),
+       ('Big Agnes Copper Spur', '2 People', 450.00, false),
+       ('Coleman Instant Cabin', '8 People', 500.00, false),
+       ('Heimplanet The Cave', '3 People', 750.00, false),
+       ('Fjällräven Abisko View', '2 People', 550.00, false),
+       ('Dometic HUB 2 Shelter', 'N/A', 400.00, false);
 
 -- ==========================================
--- 5. MEMBER HISTORY
--- FKs updated to match new Member IDs
+-- 5. RENTALS
+-- ==========================================
+INSERT INTO rentals (member_id, item_id, item_type, rental_date, return_date, rental_days, total_cost)
+VALUES (1, 14, 'VEHICLE', '2025-10-01', '2025-10-08', 7, 26600.00),
+       (2, 4, 'TENT', '2025-10-05', '2025-10-07', 2, 900.00),
+       (3, 2, 'GEAR', '2025-10-10', '2025-10-15', 5, 400.00),
+       (4, 9, 'GEAR', '2025-10-12', '2025-10-14', 2, 240.00),
+       (5, 5, 'VEHICLE', '2025-11-01', '2025-11-05', 4, 7000.00),
+       (5, 11, 'GEAR', '2025-11-01', '2025-11-05', 4, 1400.00),
+       (6, 15, 'VEHICLE', '2025-11-10', '2025-11-12', 2, 1600.00),
+       (7, 2, 'TENT', '2025-11-15', '2025-11-18', 3, 2700.00),
+       (8, 12, 'VEHICLE', '2025-11-20', '2025-11-22', 2, 1200.00),
+       (13, 10, 'VEHICLE', '2026-01-05', '2026-01-12', 7, 24500.00),
+       (17, 6, 'TENT', '2026-01-10', '2026-01-14', 4, 3000.00),
+       (14, 12, 'GEAR', '2026-01-12', '2026-01-16', 4, 600.00),
+       (12, 7, 'GEAR', '2026-01-15', '2026-01-18', 3, 600.00),
+       (11, 4, 'VEHICLE', '2026-01-10', '2026-01-20', 10, 12000.00),
+       (10, 8, 'GEAR', '2026-01-15', '2026-01-22', 7, 2100.00),
+       (9, 6, 'VEHICLE', '2026-01-20', '2026-01-25', 5, 11000.00),
+       (19, 1, 'GEAR', '2026-01-24', '2026-01-25', 1, 150.00),
+       (15, 3, 'VEHICLE', '2026-01-20', NULL, 6, 27000.00),
+       (15, 5, 'GEAR', '2026-01-20', NULL, 6, 3900.00),
+       (15, 6, 'GEAR', '2026-01-20', NULL, 6, 3900.00),
+       (15, 1, 'TENT', '2026-01-20', NULL, 6, 3600.00),
+       (20, 3, 'GEAR', '2026-01-23', NULL, 3, 750.00),
+       (16, 1, 'VEHICLE', '2026-01-24', NULL, 2, 3700.00),
+       (18, 7, 'VEHICLE', '2026-01-25', NULL, 1, 1500.00);
+
+-- ==========================================
+-- 6. MEMBER HISTORY
 -- ==========================================
 INSERT INTO member_history (member_id, event_description)
-VALUES (16, 'Rented Ford E-Series RV (Motorhome) on 2026-01-05'),           -- Mikael
-       (6, 'Rented Arctic Shield 4S (Tent) on 2026-01-06'),                 -- Peter
-       (11, 'Rented Mercedes-Benz Sprinter Van (Campervan) on 2026-01-10'), -- Mia
-       (3, 'Rented Portable Gas Stove (Other Gear) on 2026-01-12'),         -- Stellan
-       (15, 'Rented Niesmann+Bischoff Arto 77E (Motorhome) on 2026-01-15'), -- Zlatan
-       (7, 'Rented Fendt Opal 560 (Caravan) on 2026-01-20');
--- Malin
-
+VALUES (1, 'Rented Morelo Palace 88 (Motorhome) on 2025-10-01'),
+       (2, 'Rented Big Agnes Copper Spur (Tent) on 2025-10-05'),
+       (3, 'Rented Osprey Aether 65 (Gear) on 2025-10-10'),
+       (4, 'Rented Yeti Tundra 45 (Gear) on 2025-10-12'),
+       (5, 'Rented Mercedes Marco Polo (Campervan) on 2025-11-01'),
+       (5, 'Rented Advanced Elements (Gear) on 2025-11-01'),
+       (6, 'Rented Volvo Valp Overlander (Campervan) on 2025-11-10'),
+       (7, 'Rented Nordisk Asgard 12.6 (Tent) on 2025-11-15'),
+       (8, 'Rented Hobby Beachy 450 (Caravan) on 2025-11-20'),
+       (13, 'Rented Scania Expedition Truck (Motorhome) on 2026-01-05'),
+       (17, 'Rented Heimplanet The Cave (Tent) on 2026-01-10'),
+       (11, 'Rented Kabe Imperial 1000 (Caravan) on 2026-01-10'),
+       (14, 'Rented GoPro Hero 12 (Gear) on 2026-01-12'),
+       (12, 'Rented Ooni Karu 12 (Gear) on 2026-01-15'),
+       (10, 'Rented Starlink Roam (Gear) on 2026-01-15'),
+       (15, 'Rented Concorde Liner 1090 (Motorhome) on 2026-01-20'),
+       (15, 'Rented Scott Strike eRIDE (Gear) on 2026-01-20'),
+       (15, 'Rented Scott Strike eRIDE (Gear) on 2026-01-20'),
+       (15, 'Rented Thule Tepui Explorer (Tent) on 2026-01-20'),
+       (9, 'Rented Adria Supersonic 780 (Motorhome) on 2026-01-20'),
+       (20, 'Rented Jackery Explorer 1000 (Gear) on 2026-01-23'),
+       (16, 'Rented Hymer Grand Canyon S (Campervan) on 2026-01-24'),
+       (19, 'Rented Weber Traveler (Gear) on 2026-01-24'),
+       (18, 'Rented Airstream Flying Cloud (Caravan) on 2026-01-25'),
+       -- Returns (Added based on closed rentals)
+       (1, 'Returned Morelo Palace 88 (Motorhome) on 2025-10-08'),
+       (2, 'Returned Big Agnes Copper Spur (Tent) on 2025-10-07'),
+       (3, 'Returned Osprey Aether 65 (Gear) on 2025-10-15'),
+       (4, 'Returned Yeti Tundra 45 (Gear) on 2025-10-14'),
+       (5, 'Returned Mercedes Marco Polo (Campervan) on 2025-11-05'),
+       (5, 'Returned Advanced Elements (Gear) on 2025-11-05'),
+       (6, 'Returned Volvo Valp Overlander (Campervan) on 2025-11-12'),
+       (7, 'Returned Nordisk Asgard 12.6 (Tent) on 2025-11-18'),
+       (8, 'Returned Hobby Beachy 450 (Caravan) on 2025-11-22'),
+       (13, 'Returned Scania Expedition Truck (Motorhome) on 2026-01-12'),
+       (17, 'Returned Heimplanet The Cave (Tent) on 2026-01-14'),
+       (14, 'Returned GoPro Hero 12 (Gear) on 2026-01-16'),
+       (12, 'Returned Ooni Karu 12 (Gear) on 2026-01-18'),
+       (11, 'Returned Kabe Imperial 1000 (Caravan) on 2026-01-20'),
+       (10, 'Returned Starlink Roam (Gear) on 2026-01-22'),
+       (9, 'Returned Adria Supersonic 780 (Motorhome) on 2026-01-25'),
+       (19, 'Returned Weber Traveler (Gear) on 2026-01-25');
 
 -- ==========================================
--- 6. PROFITS
+-- 7. PROFITS
 -- ==========================================
 INSERT INTO profits (date, amount)
-VALUES ('2026-01-05', 1223.00),
-       ('2026-01-06', 1673.00),
-       ('2026-01-07', 1673.00),
-       ('2026-01-08', 1673.00),
-       ('2026-01-09', 1223.00),
-       ('2026-01-10', 2723.00),
-       ('2026-01-11', 2723.00),
-       ('2026-01-12', 1525.00),
-       ('2026-01-13', 1525.00),
-       ('2026-01-14', 1500.00),
-       ('2026-01-15', 4000.00),
-       ('2026-01-16', 4000.00),
-       ('2026-01-17', 4000.00),
-       ('2026-01-18', 4000.00),
-       ('2026-01-19', 4000.00),
-       ('2026-01-20', 4950.00);
-
--- Final Check
-SELECT *
-FROM members;
+VALUES ('2025-10-08', 26600.00),
+       ('2025-10-07', 900.00),
+       ('2025-10-14', 240.00),
+       ('2025-10-15', 400.00),
+       ('2025-11-05', 8400.00),
+       ('2025-11-12', 1600.00),
+       ('2025-11-18', 2700.00),
+       ('2025-11-22', 1200.00),
+       ('2026-01-12', 24500.00),
+       ('2026-01-14', 3000.00),
+       ('2026-01-16', 600.00),
+       ('2026-01-18', 600.00),
+       ('2026-01-20', 12000.00),
+       ('2026-01-22', 2100.00),
+       ('2026-01-25', 11150.00);

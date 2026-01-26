@@ -1,9 +1,10 @@
 package com.nilsson.ui.views;
 
+import com.nilsson.service.InventoryService;
+import com.nilsson.service.MemberService;
+import com.nilsson.service.RentalService;
+import com.nilsson.ui.ServiceContainer;
 import com.nilsson.util.LanguageManager;
-import com.nilsson.registries.Inventory;
-import com.nilsson.registries.MemberRegistry;
-import com.nilsson.registries.RentalRegistry;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
@@ -19,23 +20,31 @@ import org.kordamp.ikonli.javafx.FontIcon;
 
 public class HomeView extends VBox {
 
-    public HomeView() {
-        // 1. Layout Setup
+    private final MemberService memberService;
+    private final InventoryService inventoryService;
+    private final RentalService rentalService;
+
+    public HomeView(ServiceContainer services) {
+        this.memberService = services.getMemberService();
+        this.inventoryService = services.getInventoryService();
+        this.rentalService = services.getRentalService();
+
+        // Layout Setup
         this.setPadding(new Insets(40));
         this.setSpacing(30);
         this.setAlignment(Pos.TOP_CENTER);
         this.getStyleClass().add("home-view");
 
-        // 2. Logo Section
+        // Logo Section
         ImageView logoView = loadLogo();
 
-        // 3. Welcome Text Section (Hero)
+        // Welcome Text Section
         VBox welcomeBox = createWelcomeSection();
 
-        // 4. Dashboard Stats Cards
+        // Dashboard Stats Cards
         HBox statsContainer = createStatsRow();
 
-        // Add everything to main view
+        // Add everything to the view
         this.getChildren().addAll(logoView, welcomeBox, statsContainer);
     }
 
@@ -50,7 +59,7 @@ public class HomeView extends VBox {
         ImageView imageView = new ImageView();
         if (logoImage != null) {
             imageView.setImage(logoImage);
-            imageView.setFitWidth(600); // Slightly smaller for better proportion
+            imageView.setFitWidth(600);
             imageView.setPreserveRatio(true);
 
             // Add a subtle drop shadow to the logo for depth
@@ -72,16 +81,14 @@ public class HomeView extends VBox {
     }
 
     private HBox createStatsRow() {
-        // Fetch Live Data
-        int memberCount = MemberRegistry.getInstance().getMembers().size();
-        int vehicleCount = Inventory.getInstance().getRecreationalVehicleList().size();
-        int gearCount = Inventory.getInstance().getGearList().size();
+        // Fetch data
+        int memberCount = memberService.getAllMembers().size();
+        int vehicleCount = inventoryService.getAllVehicles().size();
+        int gearCount = inventoryService.getAllGear().size();
 
-        long activeRentals = RentalRegistry.getInstance().getRentals().stream()
-                .filter(r -> r.getStatus() == null || "ACTIVE".equalsIgnoreCase(r.getStatus()))
+        long activeRentals = rentalService.getAllRentals().stream()
+                .filter(rental -> rental.getEndTime() == null)
                 .count();
-
-        // --- UPDATED: Passing specific tooltip text for each card ---
 
         VBox memberCard = createStatCard(
                 LanguageManager.getInstance().getString("nav.members"),
@@ -120,14 +127,13 @@ public class HomeView extends VBox {
         return row;
     }
 
-    // --- UPDATED SIGNATURE: Added 'String tooltipText' ---
     private VBox createStatCard(String title, String value, FontAwesome iconCode, String colorClass, String tooltipText) {
         // Icon
         FontIcon icon = new FontIcon(iconCode);
         icon.setIconSize(40);
         icon.getStyleClass().add("card-icon");
 
-        // Value (The Number)
+        // Value
         Label valueLabel = new Label(value);
         valueLabel.getStyleClass().add("card-value");
 
@@ -148,7 +154,7 @@ public class HomeView extends VBox {
         // Drop Shadow
         card.setEffect(new DropShadow(10, Color.color(0,0,0,0.15)));
 
-        // --- USE THE PASSED TEXT ---
+        // Use the text
         Tooltip tooltip = new Tooltip(tooltipText);
 
         // Optional Styling
