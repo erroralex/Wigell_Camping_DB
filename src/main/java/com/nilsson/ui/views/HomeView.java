@@ -4,6 +4,7 @@ import com.nilsson.service.InventoryService;
 import com.nilsson.service.MemberService;
 import com.nilsson.service.RentalService;
 import com.nilsson.ui.ServiceContainer;
+import com.nilsson.ui.UIUtil;
 import com.nilsson.util.LanguageManager;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -72,7 +73,7 @@ public class HomeView extends VBox {
         ImageView imageView = new ImageView();
         if (logoImage != null) {
             imageView.setImage(logoImage);
-            imageView.setFitWidth(600);
+            imageView.setFitWidth(700);
             imageView.setPreserveRatio(true);
 
             // Add a subtle drop shadow to the logo for depth
@@ -94,14 +95,25 @@ public class HomeView extends VBox {
     }
 
     private HBox createStatsRow() {
-        // Fetch data
-        int memberCount = memberService.getAllMembers().size();
-        int vehicleCount = inventoryService.getAllVehicles().size();
-        int gearCount = inventoryService.getAllGear().size() + inventoryService.getAllTents().size();
+        int memberCount = 0;
+        int vehicleCount = 0;
+        int gearCount = 0;
+        long activeRentals = 0;
 
-        long activeRentals = rentalService.getAllRentals().stream()
-                .filter(rental -> rental.getEndTime() == null)
-                .count();
+        try {
+            // Fetch data
+            memberCount = memberService.getAllMembers().size();
+            vehicleCount = inventoryService.getAllVehicles().size();
+            gearCount = inventoryService.getAllGear().size() + inventoryService.getAllTents().size();
+            activeRentals = rentalService.getAllRentals().stream().filter(
+                    rental -> rental.getEndTime() == null).count();
+        } catch (Exception e) {
+            UIUtil.showErrorAlert(
+                    LanguageManager.getInstance().getString("error.dashboardError"),
+                    LanguageManager.getInstance().getString("error.statisticsError"),
+                    LanguageManager.getInstance().getString("error.databaseConnection")
+            );
+        }
 
         this.memberCard = createStatCard(
                 LanguageManager.getInstance().getString("memberCard"),

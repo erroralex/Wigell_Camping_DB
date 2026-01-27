@@ -2,7 +2,9 @@ package com.nilsson.ui.views;
 
 import com.nilsson.entity.Gear;
 import com.nilsson.entity.Tent;
+import com.nilsson.exception.ItemActiveException;
 import com.nilsson.service.InventoryService;
+import com.nilsson.ui.ServiceContainer;
 import com.nilsson.ui.UIUtil;
 import com.nilsson.ui.dialogs.AddGearDialog;
 import com.nilsson.ui.dialogs.EditGearDialog;
@@ -32,8 +34,8 @@ public class GearView extends VBox {
     private final TextField searchField = new TextField();
     private FilteredList<InventoryItemViewModel> filteredData;
 
-    public GearView(InventoryService inventoryService) {
-        this.inventoryService = inventoryService;
+    public GearView(ServiceContainer services) {
+        this.inventoryService = services.getInventoryService();
 
         this.getStyleClass().add("content-view");
         this.setPadding(new Insets(20));
@@ -111,18 +113,28 @@ public class GearView extends VBox {
     private void loadMasterData() {
         masterData.clear();
 
-        // Fetch Tents and map to ViewModel
-        for (Tent t : inventoryService.getAllTents()) {
-            masterData.add(new InventoryItemViewModel(
-                    t.getId(), t.getModel(), "Tent", t.getCapacity(), t.getCost(), t.isRented(), true, t
-            ));
-        }
 
-        // Fetch Gear and map to ViewModel
-        for (Gear g : inventoryService.getAllGear()) {
-            masterData.add(new InventoryItemViewModel(
-                    g.getId(), g.getModel(), g.getType(), g.getCapacity(), g.getCost(), g.isRented(), false, g
-            ));
+        try {
+            // Fetch Tents
+            for (Tent t : inventoryService.getAllTents()) {
+                masterData.add(new InventoryItemViewModel(
+                        t.getId(), t.getModel(), "Tent", t.getCapacity(), t.getCost(), t.isRented(), true, t
+                ));
+            }
+
+            // Fetch Gear
+            for (Gear g : inventoryService.getAllGear()) {
+                masterData.add(new InventoryItemViewModel(
+                        g.getId(), g.getModel(), g.getType(), g.getCapacity(), g.getCost(), g.isRented(), false, g
+                ));
+            }
+
+        } catch (Exception e) {
+            UIUtil.showErrorAlert(
+                    LanguageManager.getInstance().getString("error.databaseError"),
+                    LanguageManager.getInstance().getString("error.loadFailed"),
+                    e.getMessage()
+            );
         }
     }
 
@@ -136,20 +148,33 @@ public class GearView extends VBox {
         Optional<InventoryItemViewModel> result = dialog.showAndWait();
 
         if (result.isPresent()) {
-            InventoryItemViewModel item = result.get();
+            try {
+                InventoryItemViewModel item = result.get();
 
-            if (item.isTentEntity()) {
-                // Save as Tent Entity
-                Tent newTent = new Tent(item.getModel(), item.getCapacity(), item.getCost(), false);
-                inventoryService.addTent(newTent);
-            } else {
-                // Save as Gear Entity
-                Gear newGear = new Gear(item.getModel(), item.getType(), item.getCapacity(), item.getCost(), false);
-                inventoryService.addGear(newGear);
+                if (item.isTentEntity()) {
+                    // Save as Tent Entity
+                    Tent newTent = new Tent(item.getModel(), item.getCapacity(), item.getCost(), false);
+                    inventoryService.addTent(newTent);
+                } else {
+                    // Save as Gear Entity
+                    Gear newGear = new Gear(item.getModel(), item.getType(), item.getCapacity(), item.getCost(), false);
+                    inventoryService.addGear(newGear);
+                }
+                loadMasterData();
+                UIUtil.showInfoAlert(LanguageManager.getInstance().getString(
+                                "msg.success"),
+                        null,
+                        LanguageManager.getInstance().getString("error.gearAddedSuccess"));
+
+            } catch (Exception e) {
+                UIUtil.showErrorAlert(
+                        LanguageManager.getInstance().getString("error.error"),
+                        LanguageManager.getInstance().getString("error.couldNotSaveGear"),
+                        e.getMessage());
             }
-            loadMasterData();
         }
     }
+
 
     private void handleEditGear() {
         InventoryItemViewModel selected = gearTable.getSelectionModel().getSelectedItem();
@@ -158,26 +183,35 @@ public class GearView extends VBox {
             Optional<InventoryItemViewModel> result = dialog.showAndWait();
 
             if (result.isPresent()) {
-                InventoryItemViewModel updated = result.get();
+                try {
+                    InventoryItemViewModel updated = result.get();
 
-                if (selected.isTentEntity()) {
-                    Tent tent = (Tent) selected.getOriginalEntity();
-                    tent.setModel(updated.getModel());
-                    tent.setCapacity(updated.getCapacity());
-                    tent.setCost(updated.getCost());
-                    inventoryService.updateTent(tent);
-                } else {
-                    Gear gear = (Gear) selected.getOriginalEntity();
-                    gear.setModel(updated.getModel());
-                    gear.setType(updated.getType());
-                    gear.setCapacity(updated.getCapacity());
-                    gear.setCost(updated.getCost());
-                    inventoryService.updateGear(gear);
+                    if (selected.isTentEntity()) {
+                        Tent tent = (Tent) selected.getOriginalEntity();
+                        tent.setModel(updated.getModel());
+                        tent.setCapacity(updated.getCapacity());
+                        tent.setCost(updated.getCost());
+                        inventoryService.updateTent(tent);
+                    } else {
+                        Gear gear = (Gear) selected.getOriginalEntity();
+                        gear.setModel(updated.getModel());
+                        gear.setType(updated.getType());
+                        gear.setCapacity(updated.getCapacity());
+                        gear.setCost(updated.getCost());
+                        inventoryService.updateGear(gear);
+                    }
+                    loadMasterData();
+                    UIUtil.showInfoAlert(LanguageManager.getInstance().getString(
+                                    "msg.success"),
+                            null,
+                            LanguageManager.getInstance().getString("error.gearAddedSuccess"));
+                } catch (Exception e) {
+                    UIUtil.showErrorAlert(
+                            LanguageManager.getInstance().getString("error.error"),
+                            LanguageManager.getInstance().getString("error.couldNotSaveGear"),
+                            e.getMessage());
                 }
-                loadMasterData();
             }
-        } else {
-            showSelectionError("error.pleaseSelectEditItem");
         }
     }
 
@@ -191,15 +225,25 @@ public class GearView extends VBox {
             );
 
             if (confirm) {
-                if (selected.isTentEntity()) {
-                    inventoryService.deleteTent((Tent) selected.getOriginalEntity());
-                } else {
-                    inventoryService.deleteGear((Gear) selected.getOriginalEntity());
+                try {
+                    if (selected.isTentEntity()) {
+                        inventoryService.deleteTent((Tent) selected.getOriginalEntity());
+                    } else {
+                        inventoryService.deleteGear((Gear) selected.getOriginalEntity());
+                    }
+                    masterData.remove(selected);
+                } catch (ItemActiveException e) {
+                    UIUtil.showErrorAlert(
+                            LanguageManager.getInstance().getString("error.actionBlocked"),
+                            LanguageManager.getInstance().getString("error.itemRented"),
+                            e.getMessage());
+                } catch (Exception e) {
+                    UIUtil.showErrorAlert(
+                            LanguageManager.getInstance().getString("error.databaseError"),
+                            LanguageManager.getInstance().getString("error.itemRemoval"),
+                            e.getMessage());
                 }
-                masterData.remove(selected);
             }
-        } else {
-            showSelectionError("error.pleaseSelectRemoveItem");
         }
     }
 

@@ -1,6 +1,8 @@
 package com.nilsson.repo;
 
 import com.nilsson.entity.Tent;
+import com.nilsson.exception.DatabaseOperationException;
+import com.nilsson.util.LanguageManager;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
@@ -31,12 +33,14 @@ public class TentRepositoryImpl implements TentRepository {
 
     @Override
     public void addTent(Tent tent) {
+        Transaction tx = null;
         try (Session session = sessionFactory.openSession()) {
-            Transaction tx = session.beginTransaction();
+            tx = session.beginTransaction();
             session.persist(tent); // persist to save
             tx.commit();
         } catch (Exception e) {
-            e.printStackTrace();
+            if (tx != null) tx.rollback();
+            throw new DatabaseOperationException(LanguageManager.getInstance().getString("error.TentDatabaseOperationException"), e);
         }
     }
 
@@ -51,12 +55,14 @@ public class TentRepositoryImpl implements TentRepository {
 
     @Override
     public void deleteTent(Tent tent) {
+        Transaction tx = null;
         try (Session session = sessionFactory.openSession()) {
-            Transaction tx = session.beginTransaction();
+            tx = session.beginTransaction();
             session.remove(tent);
             tx.commit();
         } catch (Exception e) {
-            e.printStackTrace();
+            if (tx != null) tx.rollback();
+            throw new DatabaseOperationException(LanguageManager.getInstance().getString("error.TentDatabaseRemoveException"), e);
         }
     }
 

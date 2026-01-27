@@ -1,5 +1,10 @@
 package com.nilsson.ui.views;
 
+import com.nilsson.exception.DatabaseOperationException;
+import com.nilsson.exception.InvalidMemberDataException;
+import com.nilsson.exception.MemberActiveException;
+import com.nilsson.service.ProfitsService;
+import com.nilsson.ui.ServiceContainer;
 import com.nilsson.util.LanguageManager;
 import com.nilsson.entity.Member;
 import com.nilsson.service.MemberService;
@@ -28,12 +33,14 @@ public class MemberView extends VBox {
     private final ObservableList<Member> masterMemberData = FXCollections.observableArrayList();
 
     private final MemberService memberService;
+    private final ProfitsService profitsService;
 
     private final TextField searchField = new TextField();
     private FilteredList<Member> filteredData;
 
-    public MemberView(MemberService memberService) {
-        this.memberService = memberService;
+    public MemberView(ServiceContainer services) {
+        this.memberService = services.getMemberService();
+        this.profitsService = services.getProfitsService();
 
         this.getStyleClass().add("content-view");
         this.setSpacing(20);
@@ -107,7 +114,15 @@ public class MemberView extends VBox {
     }
 
     private void loadMasterData() {
-        masterMemberData.setAll(memberService.getAllMembers());
+        try {
+            masterMemberData.setAll(memberService.getAllMembers());
+        } catch (Exception e) {
+            UIUtil.showErrorAlert(
+                    LanguageManager.getInstance().getString("error.databaseError"),
+                    LanguageManager.getInstance().getString("error.couldNotLoad"),
+                    LanguageManager.getInstance().getString("error.databaseConnection")
+            );
+        }
     }
 
     private void handleAddMember() {
@@ -115,9 +130,21 @@ public class MemberView extends VBox {
         Optional<Member> result = dialog.showAndWait();
 
         if (result.isPresent()) {
-            Member newMember = result.get();
-            memberService.addMember(newMember);
-            loadMasterData();
+            try {
+                Member newMember = result.get();
+                memberService.addMember(newMember);
+                loadMasterData();
+            } catch (InvalidMemberDataException e) {
+                UIUtil.showErrorAlert(
+                        LanguageManager.getInstance().getString("error.validation"),
+                        LanguageManager.getInstance().getString("error.cannotAddMember"),
+                        e.getMessage());
+            } catch (DatabaseOperationException e) {
+                UIUtil.showErrorAlert(
+                        LanguageManager.getInstance().getString("error.databaseError"),
+                        LanguageManager.getInstance().getString("error.saveFailed"),
+                        LanguageManager.getInstance().getString("error.tryAgain"));
+            }
         }
     }
 
@@ -130,14 +157,29 @@ public class MemberView extends VBox {
                     LanguageManager.getInstance().getString("error.selectionRequired"),
                     LanguageManager.getInstance().getString("error.pleaseSelectEditItem"));
             return;
+
         }
 
         EditMemberDialog dialog = new EditMemberDialog(selectedMember);
         Optional<Member> result = dialog.showAndWait();
 
         if (result.isPresent()) {
-            memberService.updateMember(result.get());
-            loadMasterData();
+            try {
+                memberService.updateMember(result.get());
+                loadMasterData();
+            } catch (InvalidMemberDataException e) {
+                UIUtil.showErrorAlert(
+                        LanguageManager.getInstance().getString("error.validation"),
+                        LanguageManager.getInstance().getString("error.validationFailed"),
+                        e.getMessage()
+                );
+            } catch (Exception e) {
+                UIUtil.showErrorAlert(
+                        LanguageManager.getInstance().getString("error.databaseError"),
+                        LanguageManager.getInstance().getString("error.updateFailed"),
+                        e.getMessage()
+                );
+            }
         }
     }
 
@@ -145,13 +187,12 @@ public class MemberView extends VBox {
         Member selectedMember = memberTable.getSelectionModel().getSelectedItem();
 
         if (selectedMember == null) {
-            UIUtil.showErrorAlert(
-                    LanguageManager.getInstance().getString("error.missingMember"),
-                    LanguageManager.getInstance().getString("error.selectionRequired"),
-                    LanguageManager.getInstance().getString("error.pleaseSelectRemoveMember"));
-            return;
+                UIUtil.showErrorAlert(
+                        LanguageManager.getInstance().getString("error.missingMember"),
+                        LanguageManager.getInstance().getString("error.selectionRequired"),
+                        LanguageManager.getInstance().getString("error.pleaseSelectRemoveMember"));
+                return;
         }
-
         boolean confirmed = UIUtil.showConfirmationAlert(
                 LanguageManager.getInstance().getString("confirm.removal"),
                 LanguageManager.getInstance().getString("confirm.confirm"),
@@ -159,8 +200,25 @@ public class MemberView extends VBox {
                         selectedMember.getFirstName() + "?");
 
         if (confirmed) {
-            memberService.deleteMember(selectedMember);
-            masterMemberData.remove(selectedMember);
+            try {
+                memberService.deleteMember(selectedMember);
+                masterMemberData.remove(selectedMember);
+
+            } catch (MemberActiveException e) {
+                // If member has active rental
+                UIUtil.showErrorAlert(
+                        LanguageManager.getInstance().getString("error.actionBlocked"),
+                        LanguageManager.getInstance().getString("error.cannotDeleteMember"),
+                        e.getMessage()
+                );
+            } catch (Exception e) {
+                // Delete fails because of DB error
+                UIUtil.showErrorAlert(
+                        LanguageManager.getInstance().getString("error.databaseError"),
+                        LanguageManager.getInstance().getString("error.removeFailed"),
+                        e.getMessage()
+                );
+            }
         }
     }
 
@@ -177,6 +235,35 @@ public class MemberView extends VBox {
 
         HistoryDialog historyDialog = new HistoryDialog(selectedMember);
         historyDialog.showAndWait();
+    }
+
+    private void handleGenerateReport() {
+        Member selectedMember = memberTable.getSelectionModel().getSelectedItem();
+
+        if (selectedMember == null) {
+            UIUtil.showErrorAlert(
+                    LanguageManager.getInstance().getString("error.noItemSelected"),
+                    LanguageManager.getInstance().getString("error.selectionRequired"),
+                    LanguageManager.getInstance().getString("error.pleaseSelectMemberHistory"));
+            return;
+        }
+
+        try {
+            String reportOutput = profitsService.generateMemberRevenueReport(selectedMember);
+
+            UIUtil.showLongTextDialog(
+                    LanguageManager.getInstance().getString("info.reportGenerated"),
+                    LanguageManager.getInstance().getString("txt.revenueReport") + selectedMember.getFirstName(),
+                    reportOutput
+            );
+
+        } catch (Exception e) {
+            UIUtil.showErrorAlert(
+                    LanguageManager.getInstance().getString("error.operationFailed"),
+                    LanguageManager.getInstance().getString("txt.couldNotGenerateReport"),
+                    e.getMessage()
+            );
+        }
     }
 
     private HBox createButtonBar() {
@@ -196,12 +283,16 @@ public class MemberView extends VBox {
         btnHistory.getStyleClass().add("action-button");
         btnHistory.setOnAction(actionEvent -> handleShowHistory());
 
+        Button btnReport = new Button(LanguageManager.getInstance().getString("btn.report"));
+        btnReport.getStyleClass().add("action-button");
+        btnReport.setOnAction(e -> handleGenerateReport());
+
         Button btnRefresh = new Button();
         btnRefresh.setGraphic(new FontIcon(FontAwesome.REFRESH));
         btnRefresh.getStyleClass().add("action-button");
         btnRefresh.setOnAction(e -> refreshData());
 
-        HBox buttonBar = new HBox(10, btnAdd, btnEdit, btnRemove, btnHistory, btnRefresh);
+        HBox buttonBar = new HBox(10, btnAdd, btnEdit, btnRemove, btnHistory, btnReport, btnRefresh);
         buttonBar.setAlignment(Pos.CENTER_LEFT);
         return buttonBar;
     }

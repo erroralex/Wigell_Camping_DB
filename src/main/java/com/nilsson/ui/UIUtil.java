@@ -181,6 +181,38 @@ public class UIUtil {
     }
 
     /**
+     * Shows a dialog containing long text content in a scrollable text area.
+     * Useful for reports, logs, or history details.
+     */
+    public static void showLongTextDialog(String title, String header, String content) {
+        Alert alert = new Alert(AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(header);
+        alert.getDialogPane().setContentText(null);
+
+        applyTheme(alert);
+
+        // Create the text area
+        TextArea textArea = new TextArea(content);
+        textArea.setEditable(false);
+        textArea.setWrapText(true);
+        textArea.getStyleClass().addAll("text-field", "text-area");
+
+        textArea.setMaxWidth(Double.MAX_VALUE);
+        textArea.setMaxHeight(Double.MAX_VALUE);
+        GridPane.setVgrow(textArea, Priority.ALWAYS);
+        GridPane.setHgrow(textArea, Priority.ALWAYS);
+
+        GridPane contentPane = new GridPane();
+        contentPane.setMaxWidth(Double.MAX_VALUE);
+        contentPane.add(textArea, 0, 0);
+
+        alert.getDialogPane().setContent(contentPane);
+
+        alert.showAndWait();
+    }
+
+    /**
      * Creates an HBox layout that pushes the main graphic and the toggle icon
      * to the opposite sides of the button text space.
      *

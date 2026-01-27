@@ -1,6 +1,8 @@
 package com.nilsson.repo;
 
 import com.nilsson.entity.Rental;
+import com.nilsson.exception.DatabaseOperationException;
+import com.nilsson.util.LanguageManager;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
@@ -16,21 +18,28 @@ public class RentalRepositoryImpl implements RentalRepository {
 
     @Override
     public void save(Rental rental) {
+        Transaction tx = null;
         try (Session session = sessionFactory.openSession()) {
-            Transaction tx = session.beginTransaction();
+            tx = session.beginTransaction();
             session.persist(rental);
             tx.commit();
         } catch (Exception e) {
-            e.printStackTrace();
+            if (tx != null) tx.rollback();
+            throw new DatabaseOperationException(LanguageManager.getInstance().getString(
+                    "error.RentalDatabaseOperationException"), e);
         }
     }
 
     @Override
     public void update(Rental rental) {
+        Transaction tx = null;
         try (Session session = sessionFactory.openSession()) {
-            Transaction tx = session.beginTransaction();
-            session.merge(rental); // merge updates existing
+            tx = session.beginTransaction();
+            session.merge(rental);
             tx.commit();
+        } catch (Exception e) {
+            if (tx != null) tx.rollback();
+            throw new DatabaseOperationException(LanguageManager.getInstance().getString("error.RentalDatabaseOperationException"), e);
         }
     }
 

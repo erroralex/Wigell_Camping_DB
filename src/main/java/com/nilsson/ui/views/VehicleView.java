@@ -1,6 +1,8 @@
 package com.nilsson.ui.views;
 
 import com.nilsson.entity.Vehicle;
+import com.nilsson.exception.ItemActiveException;
+import com.nilsson.ui.ServiceContainer;
 import com.nilsson.ui.dialogs.AddVehicleDialog;
 import com.nilsson.ui.dialogs.EditVehicleDialog;
 import com.nilsson.util.LanguageManager;
@@ -20,6 +22,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import org.kordamp.ikonli.fontawesome.FontAwesome;
 import org.kordamp.ikonli.javafx.FontIcon;
+
 import java.util.Optional;
 
 public class VehicleView extends VBox {
@@ -30,8 +33,8 @@ public class VehicleView extends VBox {
     private final TextField searchField = new TextField();
     private FilteredList<Vehicle> filteredData;
 
-    public VehicleView(InventoryService inventoryService) {
-        this.inventoryService = inventoryService;
+    public VehicleView(ServiceContainer services) {
+        this.inventoryService = services.getInventoryService();
 
         this.getStyleClass().add("content-view");
         this.setSpacing(20);
@@ -120,7 +123,15 @@ public class VehicleView extends VBox {
     }
 
     private void loadMasterData() {
-        masterVehicleData.setAll(inventoryService.getAllVehicles());
+        try {
+            masterVehicleData.setAll(inventoryService.getAllVehicles());
+        } catch (Exception e) {
+            UIUtil.showErrorAlert(
+                    LanguageManager.getInstance().getString("error.databaseError"),
+                    LanguageManager.getInstance().getString("error.couldNotLoadVehicles"),
+                    e.getMessage()
+            );
+        }
     }
 
     public void refreshData() {
@@ -130,37 +141,73 @@ public class VehicleView extends VBox {
     private void handleAdd() {
         AddVehicleDialog dialog = new AddVehicleDialog();
         Optional<Vehicle> result = dialog.showAndWait();
+
         if (result.isPresent()) {
-            Vehicle newVehicle = result.get();
-            inventoryService.addVehicle(newVehicle);
-            loadMasterData();
-            UIUtil.showInfoAlert(LanguageManager.getInstance().getString("msg.success"), null, "Vehicle added successfully.");
+            try {
+                inventoryService.addVehicle(result.get());
+                loadMasterData();
+                UIUtil.showInfoAlert(LanguageManager.getInstance().getString(
+                        "msg.success"),
+                        null,
+                        LanguageManager.getInstance().getString("txt.vehicleAddedSuccess"));
+            } catch (Exception e) {
+                UIUtil.showErrorAlert(
+                        LanguageManager.getInstance().getString("error.error"),
+                        LanguageManager.getInstance().getString("error.couldNotSaveVehicle"),
+                        e.getMessage());
+            }
         }
     }
 
     private void handleEdit() {
         Vehicle selectedVehicle = vehicleTable.getSelectionModel().getSelectedItem();
+
         if (selectedVehicle != null) {
             EditVehicleDialog dialog = new EditVehicleDialog(selectedVehicle);
             Optional<Vehicle> result = dialog.showAndWait();
+
             if (result.isPresent()) {
-                inventoryService.updateVehicle(result.get());
-                loadMasterData();
+                try {
+                    inventoryService.updateVehicle(result.get());
+                    loadMasterData();
+                    UIUtil.showInfoAlert(LanguageManager.getInstance().getString(
+                            "msg.success"),
+                            null,
+                            LanguageManager.getInstance().getString("txt.vehicleAddedSuccess"));
+                } catch (Exception e) {
+                    UIUtil.showErrorAlert(
+                            LanguageManager.getInstance().getString("error.error"),
+                            LanguageManager.getInstance().getString("error.couldNotSaveVehicle"),
+                            e.getMessage());
+                }
             }
-        } else {
-            showSelectionError("error.pleaseSelectEditItem");
         }
     }
 
     private void handleRemoveVehicle() {
         Vehicle selectedVehicle = vehicleTable.getSelectionModel().getSelectedItem();
-        if (selectedVehicle != null) {
-            if (UIUtil.showConfirmationAlert(LanguageManager.getInstance().getString("confirm.removal"), null, "Delete " + selectedVehicle.getModel() + "?")) {
+        if (selectedVehicle == null) {
+            showSelectionError("error.pleaseSelectRemoveItem");
+            return;
+        }
+
+        if (UIUtil.showConfirmationAlert(LanguageManager.getInstance().getString("confirm.removal"), null, "Delete " + selectedVehicle.getModel() + "?")) {
+            try {
                 inventoryService.deleteVehicle(selectedVehicle);
                 masterVehicleData.remove(selectedVehicle);
+            } catch (ItemActiveException e) {
+                UIUtil.showErrorAlert(
+                        LanguageManager.getInstance().getString("error.validation"),
+                        LanguageManager.getInstance().getString("error.couldNotRemoveVehicle"),
+                        e.getMessage()
+                );
+            } catch (Exception e) {
+                UIUtil.showErrorAlert(
+                        LanguageManager.getInstance().getString("error.databaseError"),
+                        LanguageManager.getInstance().getString("error.removalFailed"),
+                        e.getMessage()
+                );
             }
-        } else {
-            showSelectionError("error.pleaseSelectRemoveItem");
         }
     }
 
