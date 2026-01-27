@@ -41,19 +41,22 @@ public class Main extends Application {
             VehicleRepository vehicleRepo = new VehicleRepositoryImpl(sessionFactory);
             MemberRepository memberRepo = new MemberRepositoryImpl(sessionFactory);
             RentalRepository rentalRepo = new RentalRepositoryImpl(sessionFactory);
+            ProfitRepository profitRepo = new ProfitRepositoryImpl(sessionFactory);
 
             // Services
             AuthService authService = new AuthService();
             InventoryService inventoryService = new InventoryService(gearRepo, tentRepo, vehicleRepo);
-            MemberService memberService = new MemberService(memberRepo);
+            MemberService memberService = new MemberService(memberRepo, rentalRepo);
             RentalService rentalService = new RentalService(rentalRepo, vehicleRepo, tentRepo, gearRepo);
+            ProfitsService profitService = new ProfitsService(rentalRepo, profitRepo, memberRepo);
 
             // Service Container
             ServiceContainer services = new ServiceContainer(
                     authService,
                     memberService,
                     rentalService,
-                    inventoryService);
+                    inventoryService,
+                    profitService);
 
             // Custom Title Bar
             customTitleBar = new CustomTitleBar(primaryStage, this::handleCloseOrLogout);

@@ -118,7 +118,7 @@ public class RentalView extends VBox {
                 return new SimpleStringProperty(
                         LanguageManager.getInstance().getString("status.active")
                                 + " (" + days
-                                + LanguageManager.getInstance().getString("txt.days"));
+                                + LanguageManager.getInstance().getString("txt.days") + ")");
             }
         });
 
@@ -127,16 +127,32 @@ public class RentalView extends VBox {
     }
 
     private void loadData() {
-        List<Rental> allRentals = rentalService.getAllRentals();
-        List<Rental> activeRentals = allRentals.stream()
-                .filter(r -> r.getEndTime() == null)
-                .toList();
+        try {
+            List<Rental> allRentals = rentalService.getAllRentals();
+            List<Rental> activeRentals = allRentals.stream()
+                    .filter(r -> r.getEndTime() == null)
+                    .toList();
 
-        masterRentalData.setAll(activeRentals);
+            masterRentalData.setAll(activeRentals);
+        } catch (Exception e) {
+            UIUtil.showErrorAlert(
+                    LanguageManager.getInstance().getString("error.databaseError"),
+                    LanguageManager.getInstance().getString("error.loadFailed"),
+                    e.getMessage()
+            );
+        }
     }
 
     public void refreshData() {
-        loadData();
+        try {
+            loadData();
+        } catch (Exception e) {
+            UIUtil.showErrorAlert(
+                    LanguageManager.getInstance().getString("error.databaseError"),
+                    LanguageManager.getInstance().getString("error.loadFailed"),
+                    e.getMessage()
+            );
+        }
     }
 
     private void handleNewRental() {
@@ -165,7 +181,6 @@ public class RentalView extends VBox {
                 );
 
             } catch (Exception e) {
-                e.printStackTrace();
                 UIUtil.showErrorAlert(
                         LanguageManager.getInstance().getString("error.genericTitle"),
                         LanguageManager.getInstance().getString("error.rentalFailed"),
@@ -221,19 +236,22 @@ public class RentalView extends VBox {
                         .filter(vehicle -> vehicle.getId().equals(id))
                         .map(vehicle -> vehicle.getMake() + " " + vehicle.getModel())
                         .findFirst()
-                        .orElse("Unknown Vehicle (ID: " + id + ")");
+                        .orElse(LanguageManager.getInstance().getString("txt.unknownVehicle")
+                                + "(ID: " + id + ")");
             case "GEAR":
                 return inventoryService.getAllGear().stream()
                         .filter(gear -> gear.getId().equals(id))
                         .map(Gear::getModel)
                         .findFirst()
-                        .orElse("Unknown Gear (ID: " + id + ")");
+                        .orElse(LanguageManager.getInstance().getString("txt.unknownGear")
+                                + "(ID: " + id + ")");
             case "TENT":
                 return inventoryService.getAllTents().stream()
                         .filter(tent -> tent.getId().equals(id))
                         .map(Tent::getModel)
                         .findFirst()
-                        .orElse("Unknown Tent (ID: " + id + ")");
+                        .orElse(LanguageManager.getInstance().getString("txt.unknownTent")
+                                + "(ID: " + id + ")");
             default:
                 return type + " (ID: " + id + ")";
         }

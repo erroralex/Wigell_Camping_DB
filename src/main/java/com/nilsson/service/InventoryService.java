@@ -3,7 +3,9 @@ package com.nilsson.service;
 import com.nilsson.entity.Gear;
 import com.nilsson.entity.Tent;
 import com.nilsson.entity.Vehicle;
+import com.nilsson.exception.ItemActiveException;
 import com.nilsson.repo.*;
+import com.nilsson.util.LanguageManager;
 
 import java.util.List;
 
@@ -37,6 +39,11 @@ public class InventoryService {
     }
 
     public void deleteGear(Gear gear) {
+        if (gear.isRented()) {
+            throw new ItemActiveException(LanguageManager.getInstance().getString("error.GearActiveExceptionPartOne")
+                    + gear.getModel()
+                    + LanguageManager.getInstance().getString("error.ItemActiveExceptionPartTwo"));
+        }
         gearRepository.deleteGear(gear);
     }
 
@@ -55,6 +62,11 @@ public class InventoryService {
     }
 
     public void deleteTent(Tent tent) {
+        if (tent.isRented()) {
+            throw new ItemActiveException(LanguageManager.getInstance().getString("error.TentActiveExceptionPartOne")
+                    + tent.getModel()
+                    + LanguageManager.getInstance().getString("error.ItemActiveExceptionPartTwo"));
+        }
         tentRepository.deleteTent(tent);
     }
 
@@ -73,6 +85,11 @@ public class InventoryService {
     }
 
     public void deleteVehicle(Vehicle vehicle) {
+        if (vehicle.isRented()) {
+            throw new ItemActiveException(LanguageManager.getInstance().getString("error.VehicleActiveExceptionPartOne")
+                    + vehicle.getModel()
+                    + LanguageManager.getInstance().getString("error.ItemActiveExceptionPartTwo"));
+        }
         vehicleRepository.deleteVehicle(vehicle);
     }
 }

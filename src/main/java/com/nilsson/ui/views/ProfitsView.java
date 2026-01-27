@@ -3,6 +3,8 @@ package com.nilsson.ui.views;
 import com.nilsson.entity.DailyProfit;
 import com.nilsson.repo.*;
 import com.nilsson.service.ProfitsService;
+import com.nilsson.ui.ServiceContainer;
+import com.nilsson.ui.UIUtil;
 import com.nilsson.util.HibernateUtil;
 import com.nilsson.util.LanguageManager;
 import javafx.application.Platform;
@@ -30,9 +32,6 @@ import java.util.stream.Collectors;
 
 public class ProfitsView extends VBox {
 
-    private final DailyProfitRepository profitRepo;
-    private final RentalRepository rentalRepo;
-    private final MemberRepository memberRepo;
     private final ProfitsService profitsService;
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("MMM dd");
@@ -41,11 +40,8 @@ public class ProfitsView extends VBox {
     private final Label totalLabelValue = new Label();
     private final XYChart.Series<String, Number> profitSeries = new XYChart.Series<>();
 
-    public ProfitsView() {
-        this.profitRepo = new DailyProfitRepositoryImpl();
-        this.rentalRepo = new RentalRepositoryImpl(HibernateUtil.getSessionFactory());
-        this.memberRepo = new MemberRepositoryImpl(HibernateUtil.getSessionFactory());
-        this.profitsService = new ProfitsService(rentalRepo, profitRepo, memberRepo);
+    public ProfitsView(ServiceContainer services) {
+        this.profitsService = services.getProfitsService();
 
         this.getStyleClass().add("content-view");
         this.setPadding(new Insets(20));
@@ -75,18 +71,22 @@ public class ProfitsView extends VBox {
     public void updateView() {
         try {
             profitsService.recalculateProfits();
+
+            BigDecimal incomeToday = profitsService.getIncomeToday();
+            BigDecimal totalIncome = profitsService.calculateTotalIncome();
+            List<DailyProfit> allProfits = profitsService.getAllDailyProfits();
+
+            incomeTodayValueLabel.setText(String.format("%,.2f SEK", incomeToday));
+            totalLabelValue.setText(String.format("%,.2f SEK", totalIncome));
+            updateChartData(allProfits);
+
         } catch (Exception e) {
-            e.printStackTrace();
+            UIUtil.showErrorAlert(
+                    LanguageManager.getInstance().getString("error.databaseError"),
+                    LanguageManager.getInstance().getString("error.loadProfitsFailed"),
+                    e.getMessage()
+            );
         }
-
-        BigDecimal incomeToday = profitsService.getIncomeToday();
-        BigDecimal totalIncome = profitsService.calculateTotalIncome();
-        List<DailyProfit> allProfits = profitsService.getAllDailyProfits();
-
-        incomeTodayValueLabel.setText(String.format("%,.2f SEK", incomeToday));
-        totalLabelValue.setText(String.format("%,.2f SEK", totalIncome));
-
-        updateChartData(allProfits);
     }
 
     private void updateChartData(List<DailyProfit> allProfits) {

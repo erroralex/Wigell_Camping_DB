@@ -1,6 +1,8 @@
 package com.nilsson.repo;
 
 import com.nilsson.entity.Vehicle;
+import com.nilsson.exception.DatabaseOperationException;
+import com.nilsson.util.LanguageManager;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
@@ -31,12 +33,14 @@ public class VehicleRepositoryImpl implements VehicleRepository {
 
     @Override
     public void addVehicle(Vehicle vehicle) {
+        Transaction tx = null;
         try (Session session = sessionFactory.openSession()) {
-            Transaction tx = session.beginTransaction();
+            tx = session.beginTransaction();
             session.persist(vehicle); // persist to save
             tx.commit();
         } catch (Exception e) {
-            e.printStackTrace();
+            if (tx != null) tx.rollback(); // Always rollback on error
+            throw new DatabaseOperationException(LanguageManager.getInstance().getString("error.VehicleDatabaseOperationException"), e);
         }
     }
 
@@ -50,12 +54,14 @@ public class VehicleRepositoryImpl implements VehicleRepository {
     }
     @Override
     public void deleteVehicle(Vehicle vehicle) {
+        Transaction tx = null;
         try (Session session = sessionFactory.openSession()) {
-            Transaction tx = session.beginTransaction();
+            tx = session.beginTransaction();
             session.remove(vehicle);
             tx.commit();
         } catch (Exception e) {
-            e.printStackTrace();
+            if (tx != null) tx.rollback(); // Always rollback on error
+            throw new DatabaseOperationException(LanguageManager.getInstance().getString("error.VehicleDatabaseRemoveException"), e);
         }
     }
 

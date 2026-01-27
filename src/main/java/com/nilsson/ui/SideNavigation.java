@@ -46,18 +46,12 @@ public class SideNavigation extends VBox {
         this.primaryStage = primaryStage;
         this.onLogout = onLogout;
         this.onLanguageChange = onLanguageChange;
-        this.profitsView = new ProfitsView();
-
+        this.profitsView = new ProfitsView(services);
         this.homeView = new HomeView(services);
-
-        this.rentalView = new RentalView(
-                services,
-                this.profitsView::updateView
-        );
-
-        this.vehicleView = new VehicleView(services.getInventoryService());
-        this.gearView = new GearView(services.getInventoryService());
-        this.memberView = new MemberView(services.getMemberService());
+        this.rentalView = new RentalView(services, this.profitsView::updateView);
+        this.vehicleView = new VehicleView(services);
+        this.gearView = new GearView(services);
+        this.memberView = new MemberView(services);
 
         // Apply CSS class for the side navigation container
         this.getStyleClass().add("side-navigation");

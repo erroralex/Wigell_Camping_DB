@@ -1,7 +1,9 @@
 package com.nilsson.service;
 
 import com.nilsson.entity.*;
+import com.nilsson.exception.InvalidDateRangeException;
 import com.nilsson.exception.ItemAlreadyRentedException;
+import com.nilsson.exception.RentalAlreadyReturnedException;
 import com.nilsson.exception.ResourceNotFoundException;
 import com.nilsson.repo.*;
 import com.nilsson.service.policy.PremiumPricePolicy;
@@ -54,10 +56,19 @@ public class RentalService {
 
     public void returnItem(Rental rental) {
         if (rental.getEndTime() != null) {
-            throw new IllegalStateException(LanguageManager.getInstance().getString("error.rentalAlreadyReturned"));
+            throw new RentalAlreadyReturnedException(
+                    LanguageManager.getInstance().getString("error.rentalAlreadyReturned")
+            );
         }
 
-        rental.setEndTime(LocalDateTime.now());
+        LocalDateTime returnDate = LocalDateTime.now();
+
+        if (returnDate.isBefore(rental.getStartTime())) {
+            throw new InvalidDateRangeException(LanguageManager.getInstance().getString("error.InvalidDateRangeException"));
+        }
+
+        rental.setEndTime(returnDate);
+
         BigDecimal itemCostPerDay = BigDecimal.ZERO;
 
         switch (rental.getRentalType()) {
