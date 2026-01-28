@@ -38,18 +38,19 @@ A comprehensive enterprise rental management system designed to modernize the ca
 
 ## ✨ Key Features
 
-* **Enterprise Persistence (New):** A complete migration to **MySQL** via **Hibernate ORM**, replacing legacy JSON handling for ACID-compliant data integrity.
-* **Repository Pattern:** Decoupled data access layer allowing for modular maintenance and testability of Entities (`Members`, `Vehicles`, `Gear`, `Tents`).
+* **Authentication & Security:** Secure entry via `LoginView` with role-based access potential.
+* **Custom Window Management:**
+    * **Undecorated Stage:** Custom-built title bar replacing standard OS chrome.
+    * **Window Snapping:** Drag-to-edge logic for auto-resizing (Quarter/Half screen layouts).
+    * **Session Timer:** Integrated usage timer in the title bar for admin session tracking.
+* **Enterprise Persistence:** A complete migration to **MySQL** via **Hibernate ORM**, replacing legacy JSON handling for ACID-compliant data integrity.
 * **Dynamic Pricing Engine:** Implements the **Strategy Pattern** to calculate costs based on membership tiers:
     * **Premium:** 24/7 support and priority booking.
     * **Student:** Adjusted rates for budget-friendly rentals.
     * **Standard:** Base market rates.
 * **Smart History Logging:** Automatically tracks rental events in the `member_history` table, utilizing cascading integrity for robust audit trails.
 * **Internationalization (i18n):** Native support for English and Swedish (`sv_SE`), instantly switchable within the application.
-* **Responsive UI:**
-    * **Theming:** Toggle between Light and Dark themes (`.css` styled).
-    * **Feedback:** Instant validation for dates, stock availability, and member status.
-* **Polymorphic Inventory:** Handles diverse item types (Luxury Motorhomes vs. Simple Tents) using a "Table-per-Concrete-Class" database strategy.
+* **Polymorphic Inventory:** Handles diverse item types (Vehicles, Gear, Tents) using a "Table-per-Concrete-Class" database strategy.
 
 ---
 
@@ -59,9 +60,11 @@ The application implements a layered **Service-Repository** architecture to ensu
 
 * **Dependency Injection:** A custom `ServiceContainer` manages the lifecycle of services and repositories, removing hard dependencies.
 * **Hibernate ORM:** Annotated Entities (`@Entity`, `@Table`) map Java objects directly to SQL, handling complex relationships and lazy loading.
-* **JavaFX 21:** Built strictly with programmatic JavaFX (No FXML) for maximum performance and type safety.
+* **JavaFX 21:** Built strictly with **Programmatic JavaFX** (No FXML) for maximum performance, type safety, and custom component logic (`CustomTitleBar`).
+* **Testing Strategy:**
+    * **Unit Tests:** Mockito-based testing for Service logic.
+    * **Integration Tests:** **H2 In-Memory Database** used for safe Repository testing without polluting the production MySQL instance.
 * **Database Seeding:** Automatic `schema.sql` and `data.sql` execution ensures the environment is production-ready on the first launch.
-* **Technology Stack:** Java 21 (Modern Syntax), JUnit 5 (Testing), MySQL Connector, Ikonli (Icons).
 
 ---
 
@@ -72,7 +75,8 @@ The application implements a layered **Service-Repository** architecture to ensu
 2.  Create a database named `wigell_camping_members_club`.
 
 ### Configuration
-Modify `src/main/resources/hibernate.properties` if your credentials differ:
+Modify `src/main/resources/hibernate.properties` if your database credentials differ:
+
 ```properties
 hibernate.connection.username=root
 hibernate.connection.password=YOUR_PASSWORD
