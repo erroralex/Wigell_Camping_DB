@@ -19,7 +19,7 @@ public class RentalRepositoryImpl implements RentalRepository {
     @Override
     public void save(Rental rental) {
         Transaction tx = null;
-        try (Session session = sessionFactory.openSession()) {
+        try (Session session = this.sessionFactory.openSession()) {
             tx = session.beginTransaction();
             session.persist(rental);
             tx.commit();
@@ -33,7 +33,7 @@ public class RentalRepositoryImpl implements RentalRepository {
     @Override
     public void update(Rental rental) {
         Transaction tx = null;
-        try (Session session = sessionFactory.openSession()) {
+        try (Session session = this.sessionFactory.openSession()) {
             tx = session.beginTransaction();
             session.merge(rental);
             tx.commit();
@@ -45,7 +45,7 @@ public class RentalRepositoryImpl implements RentalRepository {
 
     @Override
     public List<Rental> getRentalsByMemberId(Long memberId) {
-        try (Session session = sessionFactory.openSession()) {
+        try (Session session = this.sessionFactory.openSession()) {
             return session.createQuery("FROM Rental r JOIN FETCH r.member WHERE r.member.id = :memberId", Rental.class)
                     .setParameter("memberId", memberId)
                     .list();
@@ -54,7 +54,7 @@ public class RentalRepositoryImpl implements RentalRepository {
 
     @Override
     public List<Rental> getAllRentals() {
-        try (Session session = sessionFactory.openSession()) {
+        try (Session session = this.sessionFactory.openSession()) {
             return session.createQuery("FROM Rental r JOIN FETCH r.member", Rental.class).list();
         }
     }

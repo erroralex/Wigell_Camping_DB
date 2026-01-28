@@ -30,6 +30,10 @@ public class InventoryService {
         return gearRepository.getAllGear();
     }
 
+    public Gear getGear(Long id) {
+        return gearRepository.getGear(id);
+    }
+
     public void addGear(Gear gear) {
         gearRepository.addGear(gear);
     }
@@ -53,6 +57,10 @@ public class InventoryService {
         return tentRepository.getAllTents();
     }
 
+    public Tent getTent(Long id) {
+        return tentRepository.getTent(id);
+    }
+
     public void addTent(Tent tent) {
         tentRepository.addTent(tent);
     }
@@ -74,6 +82,10 @@ public class InventoryService {
 
     public List<Vehicle> getAllVehicles() {
         return vehicleRepository.getAllVehicles();
+    }
+
+    public Vehicle getVehicle(Long id) {
+        return vehicleRepository.getVehicle(id);
     }
 
     public void addVehicle(Vehicle vehicle) {

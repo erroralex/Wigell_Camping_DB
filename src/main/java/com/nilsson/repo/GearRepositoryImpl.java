@@ -18,15 +18,14 @@ public class GearRepositoryImpl implements GearRepository {
 
     @Override
     public Gear getGear(Long id) {
-        try (Session session = sessionFactory.openSession()) {
+        try (Session session = this.sessionFactory.openSession()) {
             return session.get(Gear.class, id);
         }
     }
 
     @Override
     public List<Gear> getAllGear() {
-        try (Session session = sessionFactory.openSession()) {
-            // HQL Query
+        try (Session session = this.sessionFactory.openSession()) {
             return session.createQuery("FROM Gear", Gear.class).list();
         }
     }
@@ -34,7 +33,7 @@ public class GearRepositoryImpl implements GearRepository {
     @Override
     public void addGear(Gear gear) {
         Transaction tx = null;
-        try (Session session = sessionFactory.openSession()) {
+        try (Session session = this.sessionFactory.openSession()) {
             tx = session.beginTransaction();
             session.persist(gear); // persist to save
             tx.commit();
@@ -46,7 +45,7 @@ public class GearRepositoryImpl implements GearRepository {
 
     @Override
     public void updateGear(Gear gear) {
-        try (Session session = sessionFactory.openSession()) {
+        try (Session session = this.sessionFactory.openSession()) {
             Transaction tx = session.beginTransaction();
             session.merge(gear); // merge updates existing
             tx.commit();
@@ -56,7 +55,7 @@ public class GearRepositoryImpl implements GearRepository {
     @Override
     public void deleteGear(Gear gear) {
         Transaction tx = null;
-        try (Session session = sessionFactory.openSession()) {
+        try (Session session = this.sessionFactory.openSession()) {
             tx = session.beginTransaction();
             session.remove(gear);
             tx.commit();
@@ -68,7 +67,7 @@ public class GearRepositoryImpl implements GearRepository {
 
     @Override
     public List<Gear> findByIsRentedFalse() {
-        try (Session session = sessionFactory.openSession()) {
+        try (Session session = this.sessionFactory.openSession()) {
             return session.createQuery("FROM Gear g WHERE g.isRented = false", Gear.class).list();
         }
     }

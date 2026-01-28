@@ -21,7 +21,7 @@ public class ProfitRepositoryImpl implements ProfitRepository {
     @Override
     public void save(DailyProfit profit) {
         Transaction tx = null;
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+        try (Session session = this.sessionFactory.openSession()) {
             tx = session.beginTransaction();
             session.merge(profit);
 
@@ -35,7 +35,7 @@ public class ProfitRepositoryImpl implements ProfitRepository {
     @Override
     public void saveAll(List<DailyProfit> profits) {
         Transaction tx = null;
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+        try (Session session = this.sessionFactory.openSession()) {
             tx = session.beginTransaction();
             for (DailyProfit p : profits) {
                 session.merge(p);
@@ -49,14 +49,14 @@ public class ProfitRepositoryImpl implements ProfitRepository {
 
     @Override
     public List<DailyProfit> findAll() {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+        try (Session session = this.sessionFactory.openSession()) {
             return session.createQuery("from DailyProfit", DailyProfit.class).list();
         }
     }
 
     @Override
     public DailyProfit findByDate(LocalDate date) {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+        try (Session session = this.sessionFactory.openSession()) {
             Query<DailyProfit> query = session.createQuery("from DailyProfit where date = :date", DailyProfit.class);
             query.setParameter("date", date);
             return query.uniqueResult();
@@ -66,7 +66,7 @@ public class ProfitRepositoryImpl implements ProfitRepository {
     @Override
     public void deleteAll() {
         Transaction tx = null;
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+        try (Session session = this.sessionFactory.openSession()) {
             tx = session.beginTransaction();
             session.createQuery("delete from DailyProfit").executeUpdate();
             tx.commit();

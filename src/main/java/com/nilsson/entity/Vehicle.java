@@ -19,7 +19,7 @@ public class Vehicle {
     @Column(name = "model", nullable = false, length = 100)
     private String model;
 
-    @Column(name = "year", nullable = false, length = 10)
+    @Column(name = "`year`", nullable = false, length = 10)
     private String year;
 
     @Column(name = "type", nullable = false, length = 50)
