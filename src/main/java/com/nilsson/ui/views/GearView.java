@@ -154,11 +154,11 @@ public class GearView extends VBox {
                 if (item.isTentEntity()) {
                     // Save as Tent Entity
                     Tent newTent = new Tent(item.getModel(), item.getCapacity(), item.getCost(), false);
-                    inventoryService.addTent(newTent);
+                    inventoryService.saveTent(newTent);
                 } else {
                     // Save as Gear Entity
                     Gear newGear = new Gear(item.getModel(), item.getType(), item.getCapacity(), item.getCost(), false);
-                    inventoryService.addGear(newGear);
+                    inventoryService.saveGear(newGear);
                 }
                 loadMasterData();
                 UIUtil.showInfoAlert(LanguageManager.getInstance().getString(

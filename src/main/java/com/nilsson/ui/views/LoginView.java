@@ -147,6 +147,7 @@ public class LoginView extends VBox {
                     CustomTitleBar sharedTitleBar = UserSession.getInitializedTitleBar();
                     if (rootLayout.getTop() == null && sharedTitleBar != null) {
                         rootLayout.setTop(sharedTitleBar);
+                        sharedTitleBar.setTimerVisible(true);
                     }
 
                     primaryStage.getScene().setRoot(rootLayout);

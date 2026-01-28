@@ -3,9 +3,9 @@ import com.nilsson.entity.Member;
 import java.util.List;
 
 public interface MemberRepository {
-    void addMember(Member member);
+    void save(Member member);
     Member getMember(Long id);
     List<Member> getAllMembers();
-    void updateMember(Member member);
-    void deleteMember(Member member);
+    void update(Member member);
+    void delete(Member member);
 }

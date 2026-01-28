@@ -73,6 +73,7 @@ public class Main extends Application {
 
             // On Language change:
             onLanguageChange = () -> {
+                customTitleBar.updateTexts();
                 rootLayout = new RootLayout(
                         primaryStage,
                         onLogout,
@@ -136,10 +137,19 @@ public class Main extends Application {
     private void showLoginView(Stage stage, RootLayout rootLayout, AuthService authService) {
         LoginView loginView = new LoginView(stage, rootLayout, authService);
 
+        if (customTitleBar != null) {
+            customTitleBar.setTimerVisible(false);
+        }
+
+        // Wrapper for Title Bar on Login
+        BorderPane loginWrapper = new BorderPane();
+        loginWrapper.setTop(customTitleBar);
+        loginWrapper.setCenter(loginView);
+
         Scene scene = stage.getScene();
 
         if (scene == null) {
-            scene = new Scene(loginView, 1200, 800);
+            scene = new Scene(loginWrapper, 1200, 800);
 
             // Load CSS
             String css = getClass().getResource("/dark-theme.css").toExternalForm();
@@ -148,7 +158,7 @@ public class Main extends Application {
             stage.setScene(scene);
             stage.show();
         } else {
-            scene.setRoot(loginView);
+            scene.setRoot(loginWrapper);
         }
     }
 

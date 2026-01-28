@@ -25,7 +25,6 @@ public class ResizeHelper {
     }
 
     private static void addListeners(Scene scene, ResizeListener listener) {
-        // USE FILTERS (Capture Phase) instead of Handlers to catch events before other controls
         scene.addEventFilter(MouseEvent.MOUSE_MOVED, listener::processMouseMoved);
         scene.addEventFilter(MouseEvent.MOUSE_PRESSED, listener::processMousePressed);
         scene.addEventFilter(MouseEvent.MOUSE_DRAGGED, listener::processMouseDragged);
@@ -70,7 +69,7 @@ public class ResizeHelper {
             else if (bottom) newCursor = Cursor.S_RESIZE;
 
             scene.setCursor(newCursor);
-            cursor = newCursor; // Store for press event
+            cursor = newCursor;
         }
 
         public void processMousePressed(MouseEvent e) {
@@ -85,7 +84,6 @@ public class ResizeHelper {
             startScreenX = e.getScreenX();
             startScreenY = e.getScreenY();
 
-            // Consume event so UI elements below don't get clicked
             e.consume();
         }
 

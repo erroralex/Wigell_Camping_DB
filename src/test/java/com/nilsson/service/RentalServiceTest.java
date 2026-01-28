@@ -71,7 +71,7 @@ class RentalServiceTest {
         assertTrue(vehicle.isRented());
 
         // Verify
-        verify(vehicleRepository).updateVehicle(vehicle);
+        verify(vehicleRepository).update(vehicle);
     }
 
     @Test
@@ -129,7 +129,7 @@ class RentalServiceTest {
         assertFalse(vehicle.isRented());
 
         // Verify
-        verify(vehicleRepository).updateVehicle(vehicle);
+        verify(vehicleRepository).update(vehicle);
     }
 
     @Test

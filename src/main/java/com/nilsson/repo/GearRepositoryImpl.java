@@ -31,11 +31,11 @@ public class GearRepositoryImpl implements GearRepository {
     }
 
     @Override
-    public void addGear(Gear gear) {
+    public void save(Gear gear) {
         Transaction tx = null;
         try (Session session = this.sessionFactory.openSession()) {
             tx = session.beginTransaction();
-            session.persist(gear); // persist to save
+            session.persist(gear);
             tx.commit();
         } catch (Exception e) {
             if (tx != null) tx.rollback();
@@ -44,16 +44,16 @@ public class GearRepositoryImpl implements GearRepository {
     }
 
     @Override
-    public void updateGear(Gear gear) {
+    public void update(Gear gear) {
         try (Session session = this.sessionFactory.openSession()) {
             Transaction tx = session.beginTransaction();
-            session.merge(gear); // merge updates existing
+            session.merge(gear);
             tx.commit();
         }
     }
 
     @Override
-    public void deleteGear(Gear gear) {
+    public void delete(Gear gear) {
         Transaction tx = null;
         try (Session session = this.sessionFactory.openSession()) {
             tx = session.beginTransaction();
@@ -62,13 +62,6 @@ public class GearRepositoryImpl implements GearRepository {
         } catch (Exception e) {
             if (tx != null) tx.rollback();
             throw new DatabaseOperationException(LanguageManager.getInstance().getString("error.GearDatabaseRemoveException"), e);
-        }
-    }
-
-    @Override
-    public List<Gear> findByIsRentedFalse() {
-        try (Session session = this.sessionFactory.openSession()) {
-            return session.createQuery("FROM Gear g WHERE g.isRented = false", Gear.class).list();
         }
     }
 }

@@ -44,7 +44,7 @@ class RentalRepositoryImplIntegrationTest {
     void save_and_find_persists_data_correctly() {
         // Arrange
         Member member = new Member("Alexander", "Nilsson", MembershipLevel.STANDARD);
-        memberRepository.addMember(member);
+        memberRepository.save(member);
 
         Vehicle vehicle = new Vehicle(
                 "Volvo",
@@ -55,7 +55,7 @@ class RentalRepositoryImplIntegrationTest {
                 BigDecimal.valueOf(500.0),
                 false);
 
-        vehicleRepository.addVehicle(vehicle);
+        vehicleRepository.save(vehicle);
 
         Rental rental = new Rental(member, RentalType.VEHICLE, vehicle.getId(), LocalDateTime.now());
 
@@ -81,7 +81,7 @@ class RentalRepositoryImplIntegrationTest {
     void update_changes_rental_status_in_db() {
         // Arrange
         Member member = new Member("Alexander", "Nilsson", MembershipLevel.STUDENT);
-        memberRepository.addMember(member);
+        memberRepository.save(member);
 
         Vehicle vehicle = new Vehicle(
                 "Volvo",
@@ -92,7 +92,7 @@ class RentalRepositoryImplIntegrationTest {
                 BigDecimal.valueOf(700.0),
                 false
         );
-        vehicleRepository.addVehicle(vehicle);
+        vehicleRepository.save(vehicle);
 
         Rental rental = new Rental(member,RentalType.VEHICLE, vehicle.getId(), LocalDateTime.now().minusDays(1));
         rentalRepository.save(rental);

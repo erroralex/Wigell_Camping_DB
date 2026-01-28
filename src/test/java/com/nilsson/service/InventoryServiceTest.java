@@ -47,7 +47,7 @@ class InventoryServiceTest {
         assertThrows(ItemActiveException.class, () -> inventoryService.deleteGear(gear));
 
         // Verify
-        verify(gearRepository, never()).deleteGear(any());
+        verify(gearRepository, never()).delete(any());
     }
 
     @Test
@@ -65,6 +65,6 @@ class InventoryServiceTest {
         inventoryService.deleteGear(gear);
 
         // Assert & Verify
-        verify(gearRepository).deleteGear(gear);
+        verify(gearRepository).delete(gear);
     }
 }
