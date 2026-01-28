@@ -29,7 +29,7 @@ public class NewRentalDialog extends Dialog<NewRentalResult> {
     private final InventoryService inventoryService;
 
     private final ComboBox<Member> memberBox = new ComboBox<>();
-    private final ComboBox<RentalType> itemTypeBox = new ComboBox<>(); // Changed to Enum
+    private final ComboBox<RentalType> itemTypeBox = new ComboBox<>();
 
     private final ComboBox<Gear> gearBox = new ComboBox<>();
     private final ComboBox<Vehicle> vehicleBox = new ComboBox<>();
@@ -103,7 +103,7 @@ public class NewRentalDialog extends Dialog<NewRentalResult> {
         grid.add(itemTypeBox, 1, 1);
 
         // Stack the specific item boxes in the same grid cell
-        grid.add(new Label("Item:"), 0, 2);
+        grid.add(new Label(LanguageManager.getInstance().getString("txt.item")), 0, 2);
         grid.add(gearBox, 1, 2);
         grid.add(vehicleBox, 1, 2);
         grid.add(tentBox, 1, 2);

@@ -144,7 +144,7 @@ public class VehicleView extends VBox {
 
         if (result.isPresent()) {
             try {
-                inventoryService.addVehicle(result.get());
+                inventoryService.saveVehicle(result.get());
                 loadMasterData();
                 UIUtil.showInfoAlert(LanguageManager.getInstance().getString(
                         "msg.success"),

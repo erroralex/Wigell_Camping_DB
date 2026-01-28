@@ -22,13 +22,14 @@ public class ProfitsService {
     public ProfitsService(RentalRepository rentalRepo,
                           ProfitRepository profitRepo,
                           MemberRepository memberRepo) {
+
         this.rentalRepo = rentalRepo;
         this.profitRepo = profitRepo;
         this.memberRepo = memberRepo;
     }
 
     public List<DailyProfit> getAllDailyProfits() {
-        List<DailyProfit> profits = profitRepo.findAll();
+        List<DailyProfit> profits = profitRepo.GetAllProfits();
         profits.sort(Comparator.comparing(DailyProfit::getDate));
         return profits;
     }
@@ -53,7 +54,7 @@ public class ProfitsService {
         }
 
         // Update DB
-        List<DailyProfit> currentDbRecords = profitRepo.findAll();
+        List<DailyProfit> currentDbRecords = profitRepo.GetAllProfits();
         Map<LocalDate, DailyProfit> dbMap = currentDbRecords.stream()
                 .collect(Collectors.toMap(DailyProfit::getDate, p -> p));
 
@@ -66,7 +67,7 @@ public class ProfitsService {
             if (dbMap.containsKey(date)) {
                 // Update existing
                 DailyProfit p = dbMap.get(date);
-                p.setIncome(amount); // Sets BigDecimal
+                p.setIncome(amount);
                 toSave.add(p);
             } else {
                 // Create new
@@ -106,7 +107,7 @@ public class ProfitsService {
         sb.append(String.format(LanguageManager.getInstance().getString("txt.member")
                 + ": %s %s (ID: %d)%n", member.getFirstName(), member.getLastName(), member.getId()));
         sb.append(String.format(LanguageManager.getInstance().getString("txt.memberLevel")
-                + ": %s%n", member.getMembershipLevel()));
+                + ": %s%n", member.getMembershipLevel()) + "\n");
         sb.append("---------------------------------\n");
 
         List<Rental> memberRentals = allRentals.stream()
@@ -126,7 +127,7 @@ public class ProfitsService {
         }
 
         sb.append("---------------------------------\n");
-        sb.append(String.format(LanguageManager.getInstance().getString("txt.totalRevenue")
+        sb.append(String.format("\n" + LanguageManager.getInstance().getString("txt.totalRevenue")
                 + ": %,.2f SEK%n", memberTotal));
 
         return sb.toString();

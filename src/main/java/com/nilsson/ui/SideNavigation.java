@@ -172,16 +172,16 @@ public class SideNavigation extends VBox {
         inventorySubMenu.setManaged(false);
 
         homeView.setupNavActions(
-                btnMembers::fire, // On Member Card Click
-                () -> {           // On Vehicle Card Click
+                btnMembers::fire,
+                () -> {
                     ensureInventoryExpanded();
                     btnVehicle.fire();
                 },
-                () -> {           // On Gear Card Click
+                () -> {
                     ensureInventoryExpanded();
                     btnGear.fire();
                 },
-                btnRentals::fire  // On Rental Card Click
+                btnRentals::fire
         );
 
         // ──────────────────────────────────────────────────────
@@ -321,17 +321,14 @@ public class SideNavigation extends VBox {
 
         // If a sub-button is clicked, ensure the parent toggle button shows a visual cue
         if (newActiveButton.getStyleClass().contains("sub-nav-button")) {
-            // Check if the parent button is not already marked as active toggle
             if (!btnInventory.getStyleClass().contains("nav-button-toggle-active")) {
                 btnInventory.getStyleClass().add("nav-button-toggle-active");
-                // Ensure the arrow is down if one of its children is active
                 this.inventoryToggleIcon.setIconLiteral(FontAwesome.ANGLE_DOWN.getDescription());
             }
         } else {
             // If a main button (Home, Members) is clicked, ensure the Inventory button is NOT marked as active toggle
             if (activeButton != btnInventory) {
                 btnInventory.getStyleClass().remove("nav-button-toggle-active");
-                // Reset the arrow if it's not the active button
                 if (this.inventoryToggleIcon.getIconLiteral().equals(FontAwesome.ANGLE_DOWN.getDescription())) {
                     this.inventoryToggleIcon.setIconLiteral(FontAwesome.ANGLE_RIGHT.getDescription());
                 }

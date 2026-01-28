@@ -31,11 +31,11 @@ public class TentRepositoryImpl implements TentRepository {
     }
 
     @Override
-    public void addTent(Tent tent) {
+    public void save(Tent tent) {
         Transaction tx = null;
         try (Session session = this.sessionFactory.openSession()) {
             tx = session.beginTransaction();
-            session.persist(tent); // persist to save
+            session.persist(tent);
             tx.commit();
         } catch (Exception e) {
             if (tx != null) tx.rollback();
@@ -44,16 +44,16 @@ public class TentRepositoryImpl implements TentRepository {
     }
 
     @Override
-    public void updateTent(Tent tent) {
+    public void update(Tent tent) {
         try (Session session = this.sessionFactory.openSession()) {
             Transaction tx = session.beginTransaction();
-            session.merge(tent); // merge updates existing
+            session.merge(tent);
             tx.commit();
         }
     }
 
     @Override
-    public void deleteTent(Tent tent) {
+    public void delete(Tent tent) {
         Transaction tx = null;
         try (Session session = this.sessionFactory.openSession()) {
             tx = session.beginTransaction();
@@ -62,13 +62,6 @@ public class TentRepositoryImpl implements TentRepository {
         } catch (Exception e) {
             if (tx != null) tx.rollback();
             throw new DatabaseOperationException(LanguageManager.getInstance().getString("error.TentDatabaseRemoveException"), e);
-        }
-    }
-
-    @Override
-    public List<Tent> findByIsRentedFalse() {
-        try (Session session = this.sessionFactory.openSession()) {
-            return session.createQuery("FROM Tent t WHERE t.isRented = false", Tent.class).list();
         }
     }
 }

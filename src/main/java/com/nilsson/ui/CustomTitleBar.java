@@ -22,22 +22,23 @@ public class CustomTitleBar extends HBox {
     private double xOffset = 0;
     private double yOffset = 0;
 
-    // Sensitivity for snapping (how close to the edge you must drag)
     private static final double SNAP_THRESHOLD = 20.0;
 
     // Timer components
     public Label timeDisplayLabel = new Label("00:00:00");
-    private final Label prefixLabel = new Label(LanguageManager.getInstance().getString("header.sessionTimer") + " ");
+    private final Label prefixLabel = new Label();
+
     private final HBox timerContainer;
     private final Runnable onExitCleanup;
 
     public CustomTitleBar(Stage primaryStage, Runnable onExitCleanup) {
         this.onExitCleanup = onExitCleanup;
+        updateTexts();
 
         // Apply CSS class
         this.getStyleClass().add("custom-title-bar");
         this.setAlignment(Pos.CENTER_LEFT);
-        this.setPrefHeight(40); // Ensure enough height for hit targets
+        this.setPrefHeight(40);
 
         // Application Title (Aligned Left)
         Label titleLabel = new Label("Wigell Camping Admin Portal");
@@ -81,7 +82,6 @@ public class CustomTitleBar extends HBox {
             primaryStage.close();
         });
 
-        // Add components: Title | Left Spacer | Timer | Right Spacer | Controls
         this.getChildren().addAll(titleLabel, leftSpacer, timerContainer, rightSpacer, minimizeBtn, maximizeBtn, closeBtn);
 
         // Dragging Logic
@@ -94,7 +94,7 @@ public class CustomTitleBar extends HBox {
 
         this.setOnMouseDragged(event -> {
             if (event.getButton() == MouseButton.PRIMARY) {
-                // 1. Handle "Tear-off": If dragging while maximized, restore first
+                // If dragging while maximized, restore first
                 if (primaryStage.isMaximized()) {
                     double ratioX = event.getSceneX() / primaryStage.getWidth();
                     toggleMaximize(primaryStage, maximizeBtn);
@@ -105,7 +105,7 @@ public class CustomTitleBar extends HBox {
                 double newX = event.getScreenX() - xOffset;
                 double newY = event.getScreenY() - yOffset;
 
-                // Basic constraint: Prevent title bar from getting lost above screen
+                // Prevent title bar from getting lost above screen
                 Screen screen = getScreenForCursor(event.getScreenX(), event.getScreenY());
                 Rectangle2D bounds = screen.getVisualBounds();
 
@@ -118,19 +118,27 @@ public class CustomTitleBar extends HBox {
             }
         });
 
-        // 2. Handle "Snap" on Release
+        // Handle "Snap" on Release
         this.setOnMouseReleased(event -> {
             if (event.getButton() == MouseButton.PRIMARY) {
                 handleSnap(primaryStage, maximizeBtn, event.getScreenX(), event.getScreenY());
             }
         });
 
-        // 3. Double Click to Maximize
+        // Double Click to Maximize
         this.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2 && event.getButton() == MouseButton.PRIMARY) {
                 toggleMaximize(primaryStage, maximizeBtn);
             }
         });
+    }
+
+    /**
+     * Updates the UI text elements in the title bar to the current language.
+     * Call this whenever the application language changes.
+     */
+    public void updateTexts() {
+        prefixLabel.setText(LanguageManager.getInstance().getString("header.sessionTimer") + " ");
     }
 
     // Toggles the visibility of the session timer container.
@@ -160,7 +168,7 @@ public class CustomTitleBar extends HBox {
         boolean nearLeft = cursorX <= minX + SNAP_THRESHOLD;
         boolean nearRight = cursorX >= maxX - SNAP_THRESHOLD;
 
-        // CORNER SNAPPING (Quarter)
+        // Corner Snapping (Quarter)
         if (nearTop && nearLeft) {
             // Top-Left Quarter
             snapWindow(stage, maxBtn, minX, minY, width / 2, height / 2);
@@ -175,7 +183,7 @@ public class CustomTitleBar extends HBox {
             snapWindow(stage, maxBtn, minX + width / 2, minY + height / 2, width / 2, height / 2);
         }
 
-        // EDGE SNAPPING (Half & Maximize)
+        // Edge Snapping
         else if (nearTop) {
             // Full Screen (Maximize)
             if (!stage.isMaximized()) {

@@ -11,35 +11,35 @@ import java.util.List;
 
 public class InventoryService {
 
-    private final GearRepository gearRepository;
-    private final TentRepository tentRepository;
-    private final VehicleRepository vehicleRepository;
+    private final GearRepository gearRepo;
+    private final TentRepository tentRepo;
+    private final VehicleRepository vehicleRepo;
 
-    public InventoryService(GearRepository gearRepository,
-                            TentRepository tentRepository,
-                            VehicleRepository vehicleRepository) {
+    public InventoryService(GearRepository gearRepo,
+                            TentRepository tentRepo,
+                            VehicleRepository vehicleRepo) {
 
-        this.gearRepository = gearRepository;
-        this.tentRepository = tentRepository;
-        this.vehicleRepository = vehicleRepository;
+        this.gearRepo = gearRepo;
+        this.tentRepo = tentRepo;
+        this.vehicleRepo = vehicleRepo;
     }
 
     // ────────────────────── GEAR OPERATIONS ──────────────────────
 
     public List<Gear> getAllGear() {
-        return gearRepository.getAllGear();
+        return gearRepo.getAllGear();
     }
 
     public Gear getGear(Long id) {
-        return gearRepository.getGear(id);
+        return gearRepo.getGear(id);
     }
 
-    public void addGear(Gear gear) {
-        gearRepository.addGear(gear);
+    public void saveGear(Gear gear) {
+        gearRepo.save(gear);
     }
 
     public void updateGear(Gear gear) {
-        gearRepository.updateGear(gear);
+        gearRepo.update(gear);
     }
 
     public void deleteGear(Gear gear) {
@@ -48,25 +48,25 @@ public class InventoryService {
                     + gear.getModel()
                     + LanguageManager.getInstance().getString("error.ItemActiveExceptionPartTwo"));
         }
-        gearRepository.deleteGear(gear);
+        gearRepo.delete(gear);
     }
 
     // ────────────────────── TENT OPERATIONS ──────────────────────
 
     public List<Tent> getAllTents() {
-        return tentRepository.getAllTents();
+        return tentRepo.getAllTents();
     }
 
     public Tent getTent(Long id) {
-        return tentRepository.getTent(id);
+        return tentRepo.getTent(id);
     }
 
-    public void addTent(Tent tent) {
-        tentRepository.addTent(tent);
+    public void saveTent(Tent tent) {
+        tentRepo.save(tent);
     }
 
     public void updateTent(Tent tent) {
-        tentRepository.updateTent(tent);
+        tentRepo.update(tent);
     }
 
     public void deleteTent(Tent tent) {
@@ -75,25 +75,25 @@ public class InventoryService {
                     + tent.getModel()
                     + LanguageManager.getInstance().getString("error.ItemActiveExceptionPartTwo"));
         }
-        tentRepository.deleteTent(tent);
+        tentRepo.delete(tent);
     }
 
     // ────────────────────── VEHICLE OPERATIONS ──────────────────────
 
     public List<Vehicle> getAllVehicles() {
-        return vehicleRepository.getAllVehicles();
+        return vehicleRepo.getAllVehicles();
     }
 
     public Vehicle getVehicle(Long id) {
-        return vehicleRepository.getVehicle(id);
+        return vehicleRepo.getVehicle(id);
     }
 
-    public void addVehicle(Vehicle vehicle) {
-        vehicleRepository.addVehicle(vehicle);
+    public void saveVehicle(Vehicle vehicle) {
+        vehicleRepo.save(vehicle);
     }
 
     public void updateVehicle(Vehicle vehicle) {
-        vehicleRepository.updateVehicle(vehicle);
+        vehicleRepo.update(vehicle);
     }
 
     public void deleteVehicle(Vehicle vehicle) {
@@ -102,6 +102,6 @@ public class InventoryService {
                     + vehicle.getModel()
                     + LanguageManager.getInstance().getString("error.ItemActiveExceptionPartTwo"));
         }
-        vehicleRepository.deleteVehicle(vehicle);
+        vehicleRepo.delete(vehicle);
     }
 }

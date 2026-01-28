@@ -31,43 +31,36 @@ public class VehicleRepositoryImpl implements VehicleRepository {
     }
 
     @Override
-    public void addVehicle(Vehicle vehicle) {
+    public void save(Vehicle vehicle) {
         Transaction tx = null;
         try (Session session = this.sessionFactory.openSession()) {
             tx = session.beginTransaction();
-            session.persist(vehicle); // persist to save
+            session.persist(vehicle);
             tx.commit();
         } catch (Exception e) {
-            if (tx != null) tx.rollback(); // Always rollback on error
+            if (tx != null) tx.rollback();
             throw new DatabaseOperationException(LanguageManager.getInstance().getString("error.VehicleDatabaseOperationException"), e);
         }
     }
 
     @Override
-    public void updateVehicle(Vehicle vehicle) {
+    public void update(Vehicle vehicle) {
         try (Session session = this.sessionFactory.openSession()) {
             Transaction tx = session.beginTransaction();
-            session.merge(vehicle); // merge updates existing
+            session.merge(vehicle);
             tx.commit();
         }
     }
     @Override
-    public void deleteVehicle(Vehicle vehicle) {
+    public void delete(Vehicle vehicle) {
         Transaction tx = null;
         try (Session session = this.sessionFactory.openSession()) {
             tx = session.beginTransaction();
             session.remove(vehicle);
             tx.commit();
         } catch (Exception e) {
-            if (tx != null) tx.rollback(); // Always rollback on error
+            if (tx != null) tx.rollback();
             throw new DatabaseOperationException(LanguageManager.getInstance().getString("error.VehicleDatabaseRemoveException"), e);
-        }
-    }
-
-    @Override
-    public List<Vehicle> findByIsRentedFalse() {
-        try (Session session = this.sessionFactory.openSession()) {
-            return session.createQuery("FROM Vehicle v WHERE v.isRented = false", Vehicle.class).list();
         }
     }
 }

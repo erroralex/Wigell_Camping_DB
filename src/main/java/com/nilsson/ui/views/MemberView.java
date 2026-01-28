@@ -132,7 +132,7 @@ public class MemberView extends VBox {
         if (result.isPresent()) {
             try {
                 Member newMember = result.get();
-                memberService.addMember(newMember);
+                memberService.saveMember(newMember);
                 loadMasterData();
             } catch (InvalidMemberDataException e) {
                 UIUtil.showErrorAlert(

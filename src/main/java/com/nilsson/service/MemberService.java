@@ -1,7 +1,6 @@
 package com.nilsson.service;
 
 import com.nilsson.entity.Member;
-import com.nilsson.entity.MembershipLevel;
 import com.nilsson.entity.Rental;
 import com.nilsson.exception.InvalidMemberDataException;
 import com.nilsson.exception.MemberActiveException;
@@ -22,23 +21,6 @@ public class MemberService {
         this.rentalRepository = rentalRepository;
     }
 
-    public void addMember(Member member) {
-        validateMember(member.getFirstName(), member.getLastName());
-        memberRepository.addMember(member);
-    }
-
-    public Member addMember(String firstName, String lastName, MembershipLevel membershipLevel) {
-        validateMember(firstName, lastName);
-
-        Member member = new Member(firstName, lastName, membershipLevel);
-        memberRepository.addMember(member);
-        return member;
-    }
-
-    public void saveNewMember(Member member) {
-        memberRepository.addMember(member);
-    }
-
     public Member getMember(Long id) {
         Member member = memberRepository.getMember(id);
         if (member == null) {
@@ -47,21 +29,17 @@ public class MemberService {
         return member;
     }
 
-    private void validateMember(String firstName, String lastName) {
-        if (firstName == null || firstName.isBlank()) {
-            throw new InvalidMemberDataException(LanguageManager.getInstance().getString("error.InvalidMemberFirstName"));
-        }
-        if (lastName == null || lastName.isBlank()) {
-            throw new InvalidMemberDataException(LanguageManager.getInstance().getString("error.InvalidMemberLastName"));
-        }
-    }
-
     public List<Member> getAllMembers() {
         return memberRepository.getAllMembers();
     }
 
+    public void saveMember(Member member) {
+        validateMember(member.getFirstName(), member.getLastName());
+        memberRepository.save(member);
+    }
+
     public void updateMember(Member member) {
-        memberRepository.updateMember(member);
+        memberRepository.update(member);
     }
 
     public void deleteMember(Member member) {
@@ -75,6 +53,15 @@ public class MemberService {
             );
         }
 
-        memberRepository.deleteMember(member);
+        memberRepository.delete(member);
+    }
+
+    private void validateMember(String firstName, String lastName) {
+        if (firstName == null || firstName.isBlank()) {
+            throw new InvalidMemberDataException(LanguageManager.getInstance().getString("error.InvalidMemberFirstName"));
+        }
+        if (lastName == null || lastName.isBlank()) {
+            throw new InvalidMemberDataException(LanguageManager.getInstance().getString("error.InvalidMemberLastName"));
+        }
     }
 }

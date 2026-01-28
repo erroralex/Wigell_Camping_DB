@@ -2,7 +2,6 @@ package com.nilsson.repo;
 
 import com.nilsson.entity.DailyProfit;
 import com.nilsson.exception.DatabaseOperationException;
-import com.nilsson.util.HibernateUtil;
 import com.nilsson.util.LanguageManager;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -27,7 +26,7 @@ public class ProfitRepositoryImpl implements ProfitRepository {
 
             tx.commit();
         } catch (Exception e) {
-            if (tx != null) tx.rollback(); // Always rollback on error
+            if (tx != null) tx.rollback();
             throw new DatabaseOperationException(LanguageManager.getInstance().getString("error.ProfitDatabaseOperationException"), e);
         }
     }
@@ -42,13 +41,13 @@ public class ProfitRepositoryImpl implements ProfitRepository {
             }
             tx.commit();
         } catch (Exception e) {
-            if (tx != null) tx.rollback(); // Always rollback on error
+            if (tx != null) tx.rollback();
             throw new DatabaseOperationException(LanguageManager.getInstance().getString("error.ProfitDatabaseOperationException"), e);
         }
     }
 
     @Override
-    public List<DailyProfit> findAll() {
+    public List<DailyProfit> GetAllProfits() {
         try (Session session = this.sessionFactory.openSession()) {
             return session.createQuery("from DailyProfit", DailyProfit.class).list();
         }
@@ -71,7 +70,7 @@ public class ProfitRepositoryImpl implements ProfitRepository {
             session.createQuery("delete from DailyProfit").executeUpdate();
             tx.commit();
         } catch (Exception e) {
-            if (tx != null) tx.rollback(); // Always rollback on error
+            if (tx != null) tx.rollback();
             throw new DatabaseOperationException(LanguageManager.getInstance().getString("error.ProfitDatabaseRemoveException"), e);
         }
     }

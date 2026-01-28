@@ -77,7 +77,7 @@ public class RentalService {
                 if (v != null) {
                     itemCostPerDay = v.getCost();
                     v.setRented(false);
-                    vehicleRepo.updateVehicle(v);
+                    vehicleRepo.update(v);
                 }
             }
             case GEAR -> {
@@ -85,7 +85,7 @@ public class RentalService {
                 if (g != null) {
                     itemCostPerDay = g.getCost();
                     g.setRented(false);
-                    gearRepo.updateGear(g);
+                    gearRepo.update(g);
                 }
             }
             case TENT -> {
@@ -93,7 +93,7 @@ public class RentalService {
                 if (t != null) {
                     itemCostPerDay = t.getCost();
                     t.setRented(false);
-                    tentRepo.updateTent(t);
+                    tentRepo.update(t);
                 }
             }
         }
@@ -124,7 +124,7 @@ public class RentalService {
 
         // Update status
         vehicle.setRented(true);
-        vehicleRepo.updateVehicle(vehicle);
+        vehicleRepo.update(vehicle);
 
         // Save rental
         rentalRepo.save(rental);
@@ -142,7 +142,7 @@ public class RentalService {
 
         // Update status
         gear.setRented(true);
-        gearRepo.updateGear(gear);
+        gearRepo.update(gear);
 
         // Save rental
         rentalRepo.save(rental);
@@ -160,7 +160,7 @@ public class RentalService {
 
         // Update status
         tent.setRented(true);
-        tentRepo.updateTent(tent);
+        tentRepo.update(tent);
 
         // Save rental
         rentalRepo.save(rental);
