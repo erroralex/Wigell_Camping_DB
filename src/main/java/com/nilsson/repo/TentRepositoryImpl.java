@@ -18,15 +18,14 @@ public class TentRepositoryImpl implements TentRepository {
 
     @Override
     public Tent getTent(Long id) {
-        try (Session session = sessionFactory.openSession()) {
+        try (Session session = this.sessionFactory.openSession()) {
             return session.get(Tent.class, id);
         }
     }
 
     @Override
     public List<Tent> getAllTents() {
-        try (Session session = sessionFactory.openSession()) {
-            // HQL Query
+        try (Session session = this.sessionFactory.openSession()) {
             return session.createQuery("FROM Tent", Tent.class).list();
         }
     }
@@ -34,7 +33,7 @@ public class TentRepositoryImpl implements TentRepository {
     @Override
     public void addTent(Tent tent) {
         Transaction tx = null;
-        try (Session session = sessionFactory.openSession()) {
+        try (Session session = this.sessionFactory.openSession()) {
             tx = session.beginTransaction();
             session.persist(tent); // persist to save
             tx.commit();
@@ -46,7 +45,7 @@ public class TentRepositoryImpl implements TentRepository {
 
     @Override
     public void updateTent(Tent tent) {
-        try (Session session = sessionFactory.openSession()) {
+        try (Session session = this.sessionFactory.openSession()) {
             Transaction tx = session.beginTransaction();
             session.merge(tent); // merge updates existing
             tx.commit();
@@ -56,7 +55,7 @@ public class TentRepositoryImpl implements TentRepository {
     @Override
     public void deleteTent(Tent tent) {
         Transaction tx = null;
-        try (Session session = sessionFactory.openSession()) {
+        try (Session session = this.sessionFactory.openSession()) {
             tx = session.beginTransaction();
             session.remove(tent);
             tx.commit();
@@ -68,7 +67,7 @@ public class TentRepositoryImpl implements TentRepository {
 
     @Override
     public List<Tent> findByIsRentedFalse() {
-        try (Session session = sessionFactory.openSession()) {
+        try (Session session = this.sessionFactory.openSession()) {
             return session.createQuery("FROM Tent t WHERE t.isRented = false", Tent.class).list();
         }
     }

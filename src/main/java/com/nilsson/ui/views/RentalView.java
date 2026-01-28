@@ -227,33 +227,31 @@ public class RentalView extends VBox {
         if (rental == null || rental.getRentalType() == null) return "Unknown";
 
         Long id = rental.getRentalObjectId();
-        String type = rental.getRentalType().toString();
+        RentalType type = rental.getRentalType();
 
-        // Look up specific item based on type and ID
-        switch (type) {
-            case "VEHICLE":
-                return inventoryService.getAllVehicles().stream()
-                        .filter(vehicle -> vehicle.getId().equals(id))
-                        .map(vehicle -> vehicle.getMake() + " " + vehicle.getModel())
-                        .findFirst()
-                        .orElse(LanguageManager.getInstance().getString("txt.unknownVehicle")
-                                + "(ID: " + id + ")");
-            case "GEAR":
-                return inventoryService.getAllGear().stream()
-                        .filter(gear -> gear.getId().equals(id))
-                        .map(Gear::getModel)
-                        .findFirst()
-                        .orElse(LanguageManager.getInstance().getString("txt.unknownGear")
-                                + "(ID: " + id + ")");
-            case "TENT":
-                return inventoryService.getAllTents().stream()
-                        .filter(tent -> tent.getId().equals(id))
-                        .map(Tent::getModel)
-                        .findFirst()
-                        .orElse(LanguageManager.getInstance().getString("txt.unknownTent")
-                                + "(ID: " + id + ")");
-            default:
-                return type + " (ID: " + id + ")";
+        try {
+            switch (type) {
+                case VEHICLE -> {
+                    Vehicle v = inventoryService.getVehicle(id);
+                    return (v != null) ? v.getMake() + " " + v.getModel()
+                            : LanguageManager.getInstance().getString("txt.unknownVehicle") + " (ID: " + id + ")";
+                }
+                case GEAR -> {
+                    Gear g = inventoryService.getGear(id);
+                    return (g != null) ? g.getModel()
+                            : LanguageManager.getInstance().getString("txt.unknownGear") + " (ID: " + id + ")";
+                }
+                case TENT -> {
+                    Tent t = inventoryService.getTent(id);
+                    return (t != null) ? t.getModel()
+                            : LanguageManager.getInstance().getString("txt.unknownTent") + " (ID: " + id + ")";
+                }
+                default -> {
+                    return type + " (ID: " + id + ")";
+                }
+            }
+        } catch (Exception e) {
+            return type + " (ID: " + id + ")";
         }
     }
 }

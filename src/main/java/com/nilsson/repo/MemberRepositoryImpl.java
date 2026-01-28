@@ -20,7 +20,7 @@ public class MemberRepositoryImpl implements MemberRepository {
     @Override
     public void addMember(Member member) {
         Transaction tx = null;
-        try (Session session = sessionFactory.openSession()) {
+        try (Session session = this.sessionFactory.openSession()) {
             tx = session.beginTransaction();
             session.persist(member);
             tx.commit();
@@ -32,14 +32,14 @@ public class MemberRepositoryImpl implements MemberRepository {
 
         @Override
         public Member getMember (Long id){
-            try (Session session = sessionFactory.openSession()) {
+            try (Session session = this.sessionFactory.openSession()) {
                 return session.get(Member.class, id);
             }
         }
 
         @Override
         public List<Member> getAllMembers () {
-            try (Session session = sessionFactory.openSession()) {
+            try (Session session = this.sessionFactory.openSession()) {
                 // HQL Query
                 return session.createQuery("FROM Member", Member.class).list();
             }
@@ -48,7 +48,7 @@ public class MemberRepositoryImpl implements MemberRepository {
         @Override
         public void updateMember (Member member) {
             Transaction tx = null;
-            try (Session session = sessionFactory.openSession()) {
+            try (Session session = this.sessionFactory.openSession()) {
                 tx = session.beginTransaction();
                 session.merge(member); // merge updates existing
                 tx.commit();
@@ -61,7 +61,7 @@ public class MemberRepositoryImpl implements MemberRepository {
             @Override
             public void deleteMember (Member member) {
                 Transaction tx = null;
-                try (Session session = sessionFactory.openSession()) {
+                try (Session session = this.sessionFactory.openSession()) {
                     tx = session.beginTransaction();
                     session.remove(member);
                     tx.commit();

@@ -18,15 +18,14 @@ public class VehicleRepositoryImpl implements VehicleRepository {
 
     @Override
     public Vehicle getVehicle(Long id) {
-        try (Session session = sessionFactory.openSession()) {
+        try (Session session = this.sessionFactory.openSession()) {
             return session.get(Vehicle.class, id);
         }
     }
 
     @Override
     public List<Vehicle> getAllVehicles() {
-        try (Session session = sessionFactory.openSession()) {
-            // HQL Query
+        try (Session session = this.sessionFactory.openSession()) {
             return session.createQuery("FROM Vehicle", Vehicle.class).list();
         }
     }
@@ -34,7 +33,7 @@ public class VehicleRepositoryImpl implements VehicleRepository {
     @Override
     public void addVehicle(Vehicle vehicle) {
         Transaction tx = null;
-        try (Session session = sessionFactory.openSession()) {
+        try (Session session = this.sessionFactory.openSession()) {
             tx = session.beginTransaction();
             session.persist(vehicle); // persist to save
             tx.commit();
@@ -46,7 +45,7 @@ public class VehicleRepositoryImpl implements VehicleRepository {
 
     @Override
     public void updateVehicle(Vehicle vehicle) {
-        try (Session session = sessionFactory.openSession()) {
+        try (Session session = this.sessionFactory.openSession()) {
             Transaction tx = session.beginTransaction();
             session.merge(vehicle); // merge updates existing
             tx.commit();
@@ -55,7 +54,7 @@ public class VehicleRepositoryImpl implements VehicleRepository {
     @Override
     public void deleteVehicle(Vehicle vehicle) {
         Transaction tx = null;
-        try (Session session = sessionFactory.openSession()) {
+        try (Session session = this.sessionFactory.openSession()) {
             tx = session.beginTransaction();
             session.remove(vehicle);
             tx.commit();
@@ -67,7 +66,7 @@ public class VehicleRepositoryImpl implements VehicleRepository {
 
     @Override
     public List<Vehicle> findByIsRentedFalse() {
-        try (Session session = sessionFactory.openSession()) {
+        try (Session session = this.sessionFactory.openSession()) {
             return session.createQuery("FROM Vehicle v WHERE v.isRented = false", Vehicle.class).list();
         }
     }
