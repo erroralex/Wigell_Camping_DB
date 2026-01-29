@@ -11,6 +11,12 @@ A comprehensive enterprise rental management system designed to modernize the ca
 
 ## 📸 Interface
 
+### Login Screen
+|                                      Login Screen                                       |
+|:---------------------------------------------------------------------------------------:
+| <img src="src/main/resources/screenshots/dark_mode.png" width="400" alt="Login Screen"> |
+|                          *Prepared for Secure Authentication*                           |
+
 ### Dashboard & Rentals
 | Home Dashboard | New Rental Wizard |
 |:---:|:---:|
@@ -27,10 +33,10 @@ A comprehensive enterprise rental management system designed to modernize the ca
 <summary><b>View Advanced Features</b></summary>
 <br>
 
-| Financial Reporting | Dark Mode UI |
-|:---:|:---:|
-| <img src="src/main/resources/screenshots/profits_view.png" width="400" alt="Profits View"> | <img src="src/main/resources/screenshots/dark_mode.png" width="400" alt="Dark Mode"> |
-| *Visualized Profit Analysis over Time* | *Themed CSS for Low-Light Environments* |
+| Financial Reporting |                                     Light Mode UI                                      |
+|:---:|:--------------------------------------------------------------------------------------:|
+| <img src="src/main/resources/screenshots/profits_view.png" width="400" alt="Profits View"> | <img src="src/main/resources/screenshots/light_mode.png" width="400" alt="Light Mode"> |
+| *Visualized Profit Analysis over Time* |                       *Themed CSS for Bright-Light Environments*                       |
 
 </details>
 

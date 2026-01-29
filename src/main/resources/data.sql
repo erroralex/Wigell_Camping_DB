@@ -130,7 +130,8 @@ VALUES (1, 'Rented Morelo Palace 88 (Motorhome) on 2025-10-01'),
        (16, 'Rented Hymer Grand Canyon S (Campervan) on 2026-01-24'),
        (19, 'Rented Weber Traveler (Gear) on 2026-01-24'),
        (18, 'Rented Airstream Flying Cloud (Caravan) on 2026-01-25'),
-       -- Returns (Added based on closed rentals)
+
+       -- Returns
        (1, 'Returned Morelo Palace 88 (Motorhome) on 2025-10-08'),
        (2, 'Returned Big Agnes Copper Spur (Tent) on 2025-10-07'),
        (3, 'Returned Osprey Aether 65 (Gear) on 2025-10-15'),
